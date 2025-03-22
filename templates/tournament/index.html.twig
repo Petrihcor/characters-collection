@@ -19,24 +19,13 @@
     {% endif %}
 
     <h2>Выбери статы</h2>
-    <form action="">
-            <div>
-                <input type="radio" id="contactChoice1" name="intelligence" value="email" />
-                <label for="contactChoice1">Интеллект</label>
-
-                <input type="radio" id="contactChoice2" name="strength" value="phone" />
-                <label for="contactChoice2">Сила</label>
-
-                <input type="radio" id="contactChoice3" name="agility" value="mail" />
-                <label for="contactChoice3">Ловкость</label>
-
-                <input type="radio" id="contactChoice3" name="special_powers" value="mail" />
-                <label for="contactChoice3">Особые умения</label>
-
-                <input type="radio" id="contactChoice3" name="fighting_skills" value="mail" />
-                <label for="contactChoice3">Бойцовские навыки</label>
-            </div>
-        <input type="submit" value="Быстрый расчет">
+    <form method="post" action="{{ path('fastTournament', {id: id}) }}">
+        <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>
+        <label><input type="checkbox" name="stats[]" value="strength"> Сила</label>
+        <label><input type="checkbox" name="stats[]" value="agility"> Ловкость</label>
+        <label><input type="checkbox" name="stats[]" value="speed"> Скорость</label>
+        <label><input type="checkbox" name="stats[]" value="stamina"> Выносливость</label>
+        <button type="submit">Запустить турнир</button>
     </form>
     <ul>
         <li><a href="{{ path('tournament_start', {id: id, stat: 'strength'}) }}">Сила</a></li>

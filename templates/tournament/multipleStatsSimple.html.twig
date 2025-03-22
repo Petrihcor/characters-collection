@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tournament Bracket{% endblock %}
+
+{% block body %}
+    <h1>Tournament Bracket</h1>
+
+    <div class="logs">
+        <h2>Logs</h2>
+        <ul>
+            {% for log in logs %}
+                <li>{{ log }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="bracket">
+        <h2>Current Bracket</h2>
+        {% for level, players in levels %}
+            <div class="level" id="level-{{ level }}">
+                <h3>Level {{ level }}</h3>
+                <div class="players">
+                    {% for player in players %}
+                        <div class="player">
+                            <span>{{ player.name }}</span>
+                            <span class="stats">
+                                {% for stat in stats %}
+                                    <span class="stat">{{ stat|capitalize }}: {{ attribute(player, stat) }}</span>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="places">
+        <h2>Final Places</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Место</th>
+                <th>Игрок</th>
+                {% for stat in stats %}
+                    <th>{{ stat|capitalize }}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for player in places %}
+                <tr>
+                    <td></td>
+                    <td>{{ player.getName() }}</td>
+                    {% for stat in stats %}
+                        <td>{{ attribute(player, stat) }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}
