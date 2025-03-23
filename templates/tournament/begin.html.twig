@@ -5,6 +5,7 @@
 {% block body %}
     <h1>Tournament Bracket</h1>
 
+    <!-- Лог боя -->
     <div class="logs">
         <h2>Logs</h2>
         <ul>
@@ -14,6 +15,7 @@
         </ul>
     </div>
 
+    <!-- Текущий уровень турнира -->
     <div class="bracket">
         <h2>Current Bracket</h2>
         {% for level, players in levels %}
@@ -22,8 +24,10 @@
                 <div class="players">
                     {% for player in players %}
                         <div class="player">
-                            <span>{{ player.name }}</span>
-                            <span class="stat">{{ attribute(player, stat) }}</span>
+                            <span>{{ player.getName() }}</span>
+                            {% for stat in stats %}
+                                <span class="stat">{{ stat|capitalize }}: {{ attribute(player, stat) }}</span>
+                            {% endfor %}
                         </div>
                     {% endfor %}
                 </div>
@@ -31,6 +35,18 @@
         {% endfor %}
     </div>
 
+    <!-- Кнопка запуска следующего раунда -->
+    <form action="{{ path('tournament_next_round', {id: id}) }}" method="post">
+        {% for stat in stats %}
+            <input type="hidden" name="stats[]" value="{{ stat }}">
+        {% endfor %}
+        <button type="submit">Следующий раунд</button>
+    </form>
+    <form action="{{ path('tournament_reset', {id: id}) }}" method="post">
+        <button type="submit" class="reset-button">Очистить турнир</button>
+    </form>
+
+    <!-- Итоговые места -->
     <div class="places">
         <h2>Final Places</h2>
         <table>
@@ -38,19 +54,23 @@
             <tr>
                 <th>Место</th>
                 <th>Игрок</th>
-                <th>{{ stat|capitalize }}</th>
+                {% for stat in stats %}
+                    <th>{{ stat }}</th>
+                {% endfor %}
             </tr>
             </thead>
             <tbody>
             {% for player in places %}
                 <tr>
-                    <td></td>
+                    <td>{{ loop.index }}</td>
                     <td>{{ player.getName() }}</td>
-                    <td>{{ attribute(player, stat) }}</td>
+                    {% for stat in stats %}
+                        <td>{{ attribute(player, 'get' ~ stat) }}</td>
+                    {% endfor %}
+
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-
 {% endblock %}

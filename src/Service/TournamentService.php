@@ -9,14 +9,14 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class TournamentService
 {
-    public function runTournament(int $leagueId, string|array $stat, EntityManagerInterface $em)
+    public function runFastTournament(int $leagueId, array $stats, EntityManagerInterface $em)
     {
         $characters = $em->getRepository(Character::class)->findBy(['league' => $leagueId]);
         $count = count($characters);
 
         // Проверка: количество участников должно быть степенью двойки
-        if ($count < 2 || ($count & ($count - 1)) !== 0) {
-            throw new \Exception("Количество участников должно быть степенью двойки (4, 8, 16, 32...)");
+        if ($count  % 2 !== 0) {
+            throw new \Exception("Количество участников должно быть четным");
         }
 
         shuffle($characters);
@@ -29,8 +29,7 @@ class TournamentService
         $round = 1;
         $places = [];
         while ($this->hasActivePlayers($levels)) {
-        //while ($round < 5) {
-            $this->processRound($levels, $stat, $round, $logs, $places);
+            $this->processRound($levels, $stats, $round, $logs, $places);
             $round++;
         }
 
@@ -41,11 +40,32 @@ class TournamentService
         ];
     }
 
+    public function runTournament(array $stats, array $tournamentData)
+    {
+        // Структуры для уровней
+        $levels = $tournamentData['levels'];
+        $logs = $tournamentData['logs'];
+        $round = $tournamentData['round'];
+        $places = $tournamentData['places'];
+
+        $this->processRound($levels, $stats, $round, $logs, $places);
+
+        foreach ($levels as  $level) {
+            shuffle($level);
+        }
+        return [
+            'levels' => $levels,
+            'places'=> $places,
+            'logs'=> $logs
+        ];
+    }
+
     //Основная логика проведения раунда
-    private function processRound(array &$levels, string|array $stat, int $round, array &$logs, array &$places)
+    private function processRound(array &$levels, array $stats, int $round, array|null &$logs, array &$places)
     {
         $levelsUpdate = [];
         foreach ($levels as $key => $level) {
+
             if (count($level) < 2) {
 
                 $this->insertWithShift($places, $key, $level[0]);
@@ -57,22 +77,18 @@ class TournamentService
 
             if (count($level) % 2 == 0) {
                 for ($i = 0; $i < count($level); $i += 2 ) {
-                    if (gettype($stat) == 'string') {
-                        $result = $this->simpleCompare($level[$i], $level[$i+1], $stat, $round);
-                    } else {
-                        $result = $this->multipleCompare($level[$i], $level[$i+1], $stat, $round);
-                    }
+
+                    $result = $this->multipleCompare($level[$i], $level[$i+1], $stats, $round);
+
                     $logs[] = $result['log'];
                     $winners[] = $result['winner'];
                     $losers[] = $result['loser'];
 
                 }
             } else {
-                if (gettype($stat) == 'string') {
-                    $result = $this->simpleOddCompare($stat, $key, $level, $round);
-                } else {
-                    $result = $this->multipleOddCompare($stat, $key, $level, $round);
-                }
+
+                $result = $this->multipleOddCompare($stats, $key, $level, $round);
+
                 foreach ($result['winners'] as $winner) {
                     $winners[] = $winner;
                 }
@@ -96,7 +112,7 @@ class TournamentService
 
 
         }
-        ksort($places);
+        krsort($places);
 
         $levels = $levelsUpdate;
 
@@ -146,6 +162,7 @@ class TournamentService
 
             $hero1Total += $stat1;
             $hero2Total += $stat2;
+
             if ($stat1 > $stat2) {
                 $hero1wins++;
             } elseif ($stat1 < $stat2) {
@@ -182,71 +199,6 @@ class TournamentService
         return $data;
     }
 
-    //сравнение одного стата по количеству очков
-    private function simpleCompare(Character $hero1, Character $hero2, string $stat, int $round)
-    {
-        $data = [];
-        $stat1 = $hero1->{"get" . ucfirst($stat)}();
-        $stat2 = $hero2->{"get" . ucfirst($stat)}();
-
-        if ($stat1 > $stat2) {
-            $data['winner'] = $hero1;
-            $data['loser'] = $hero2;
-
-        } elseif ($stat1 < $stat2) {
-            $data['winner'] = $hero2;
-            $data['loser'] = $hero1;
-        } else {
-            if (rand(0, 1) === 0) {
-                $data['winner'] = $hero1;
-                $data['loser'] = $hero2;
-            } else {
-                $data['winner'] = $hero2;
-                $data['loser'] = $hero1;
-
-            }
-        }
-        $data['log'] = "round $round {$hero1->getName()} vs {$hero2->getName()} winner: {$data['winner']->getName()}";
-        
-        return $data;
-    }
-
-    //сравнение одного стата среди трех участников по количеству очков
-    private function simpleOddCompare(string $stat, int $key, array $level, int $round)
-    {
-
-        if ($key < 0) {
-            // Отрицательный уровень: 3 человека → 2 победителя, 1 проигравший
-            while (count($level) >= 3) {
-                $heroes = array_splice($level, 0, 3);
-                usort($heroes, fn($a, $b) => $b->{"get" . ucfirst($stat)}() <=> $a->{"get" . ucfirst($stat)}());
-
-                $data['winners'][] = $heroes[0]; // Лучший
-                $data['winners'][] = $heroes[1]; // Второй
-                $data['losers'][] = $heroes[2]; // Худший
-
-                $data['logs'] = "round $round {$heroes[0]->getName()}, {$heroes[1]->getName()} vs {$heroes[2]->getName()} winners: {$heroes[0]->getName()}, {$heroes[1]->getName()}";
-
-            }
-        } else {
-
-            // Положительный уровень: 3 человека → 1 победитель, 2 проигравших
-            while (count($level) >= 3) {
-                $heroes = array_splice($level, 0, 3);
-                usort($heroes, fn($a, $b) => $b->{"get" . ucfirst($stat)}() <=> $a->{"get" . ucfirst($stat)}());
-
-                $data['winners'][] = $heroes[0]; // Лучший
-                $data['losers'][] = $heroes[1]; // Второй
-                $data['losers'][] = $heroes[2]; // Худший
-
-                $data['logs'] = "round $round {$heroes[0]->getName()} vs {$heroes[1]->getName()}, {$heroes[2]->getName()} winner: {$heroes[0]->getName()}";
-
-            }
-        }
-
-
-        return $data;
-    }
 
     private function multipleOddCompare(array $stats, int $key, array $level, int $round)
     {
