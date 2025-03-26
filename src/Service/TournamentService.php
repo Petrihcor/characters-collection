@@ -204,13 +204,14 @@ class TournamentService
     }
 
 
-    public function multipleCompare(Character $hero1, Character $hero2, array $stats, int $round)
+    public function multipleCompare(Character $hero1, Character $hero2, array $stats)
     {
         $data = [];
         $hero1wins = 0;
         $hero2wins = 0;
         $hero1Total = 0;
         $hero2Total = 0;
+
 
         foreach ($stats as $stat) {
             $stat1 = $hero1->{"get" . ucfirst($stat)}();
@@ -250,12 +251,12 @@ class TournamentService
                 }
             }
         }
+        $stringStats = "статы ";
+        $stringStats .= implode(', ', $stats);
 
-        $data['log'] = "round $round {$hero1->getName()} vs {$hero2->getName()} → winner: {$data['winner']->getName()}";
+        $data['log'] = "{$stringStats} {$hero1->getName()} vs {$hero2->getName()} → winner: {$data['winner']->getName()}";
         return $data;
     }
-
-
 
 
     private function multipleOddCompare(array $stats, int $key, array $level, int $round)
@@ -354,4 +355,86 @@ class TournamentService
         return $data;
     }
 
+    public function chooseOpponents(array &$levels): array
+    {
+        $fighters = [];
+
+        foreach ($levels as &$level) {
+
+            if (count($level) < 2) {
+                continue;
+            }
+            if (count($level) % 2 == 0) {
+
+                for ($i = 0; $i < count($level); $i += 2 ) {
+                    $fighters[] = array_shift($level);
+                    $fighters[] = array_shift($level);
+                    break;
+                }
+                break;
+            } else {
+                $fighters = array_splice($level, 0, 3);
+                break;
+            }
+
+        }
+        return $fighters;
+    }
+
+    public function runClassicTournament2(array $fighters, array $stats, array $tournamentData)
+    {
+        $levels = $tournamentData['levels'];
+        $logs = $tournamentData['logs'];
+        $round = $tournamentData['round'];
+        $places = $tournamentData['places'];
+
+
+        $levelKeys = array_keys($levels);
+
+        foreach ($levelKeys as $key) {
+            $level = &$levels[$key];
+            $playerCount = count($level);
+
+            if ($playerCount == 1) {
+                continue;
+            }
+
+            if ($playerCount % 2 == 0) {
+                $hero1 = array_shift($fighters);
+                $hero2 = array_shift($fighters);
+                $result = $this->multipleCompare($hero1, $hero2, $stats, $round);
+                $logs[] = $result['log'];
+                $winners[] = $result['winner'];
+                $losers[] = $result['loser'];
+                break;
+            } else {
+                $result = $this->multipleOddCompare($stats, $key, $fighters, $round);
+
+                foreach ($result['winners'] as $winner) {
+                    $winners[] = $winner;
+                }
+                foreach ($result['losers'] as $loser) {
+                    $losers[] = $loser;
+                }
+
+                $logs[] = $result['logs'];
+                break;
+            }
+        }
+        //пока что вот такой костыль для распределения последних мест, когда битв не осталось
+        if (!isset($winners) || !isset($losers)) {
+            return [
+                'levels' => $levels,
+                'places'=> $places,
+                'logs'=> $logs,
+            ];
+        }
+        return [
+            'levels' => $levels,
+            'places'=> $places,
+            'logs'=> $logs,
+            'winners' => $winners,
+            'losers' => $losers
+        ];
+    }
 }

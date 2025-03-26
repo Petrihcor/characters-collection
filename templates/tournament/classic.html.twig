@@ -37,13 +37,24 @@
         {% endfor %}
     </div>
 
+{#    <form action="{{ path('start_fight', {id: id}) }}" method="post">#}
+{#        <button type="submit">Подбор соперников</button>#}
+{#    </form>#}
+    <!-- Кнопка вызова модального окна для боя -->
+    <button id="openFightModal">Подбор соперников</button>
+
+    <!-- Модальное окно для боя -->
+    <div id="fightModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Бой</h2>
+            <div id="fightersContainer">
+                <p>Загрузка соперников...</p>
+            </div>
+            <button id="startFight">Начать бой</button>
+        </div>
+    </div>
     <!-- Кнопка запуска следующего раунда -->
-    <form action="{{ path('tournament_next_fight', {id: id}) }}" method="post">
-        {% for stat in stats %}
-            <input type="hidden" name="stats[]" value="{{ stat }}">
-        {% endfor %}
-        <button type="submit">Следующий бой</button>
-    </form>
     <form action="{{ path('tournament_reset', {id: id}) }}" method="post">
         <button type="submit" class="reset-button">Очистить турнир</button>
     </form>
@@ -75,4 +86,54 @@
             </tbody>
         </table>
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const modal = document.getElementById("fightModal");
+            const openModalBtn = document.getElementById("openFightModal");
+            const closeModalBtn = document.querySelector(".close");
+            const startFightBtn = document.getElementById("startFight");
+            const fightersContainer = document.getElementById("fightersContainer");
+
+            // Открываем модалку и подгружаем бойцов
+            openModalBtn.addEventListener("click", function () {
+                modal.style.display = "block";
+                console.log("Отправка запроса на:", "{{ path('start_fight', {id: id}) }}");
+                fetch("{{ path('start_fight', {id: id}) }}", { method: "POST" })
+                    .then(response => response.json())
+                    .then(data => {
+                        fightersContainer.innerHTML = "";
+                        data.fighters.forEach(fighter => {
+                            fightersContainer.innerHTML += `
+                <div class="fighter-card">
+                    <h3>${fighter.name}</h3>
+                    <p>Сила: ${fighter.strength}</p>
+                    <p>Ловкость: ${fighter.agility}</p>
+                    <input type="hidden" name="fighters[]" value="${fighter.id}">
+                </div>
+            `;
+                        });
+                    });
+            });
+
+            // Закрываем модалку
+            closeModalBtn.addEventListener("click", function () {
+                modal.style.display = "none";
+            });
+
+            // Начинаем бой
+            startFightBtn.addEventListener("click", function () {
+                const formData = new FormData();
+                document.querySelectorAll('input[name="fighters[]"]').forEach(input => {
+                    formData.append("fighters[]", input.value);
+                });
+
+                fetch("{{ path('tournament_next_fight', {id: id}) }}", {
+                    method: "POST",
+                    body: formData
+                }).then(() => {
+                    location.reload(); // Обновляем страницу после боя
+                });
+            });
+        });
+    </script>
 {% endblock %}
