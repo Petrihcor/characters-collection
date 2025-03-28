@@ -6,6 +6,7 @@ use App\Repository\LeagueRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\MaxDepth;
 
 #[ORM\Entity(repositoryClass: LeagueRepository::class)]
 class League
@@ -23,6 +24,8 @@ class League
      */
     #[ORM\OneToMany(targetEntity: Character::class, mappedBy: 'league')]
     private Collection $characters;
+
+
 
     public function __construct()
     {
@@ -75,4 +78,6 @@ class League
 
         return $this;
     }
+
+
 }

@@ -5,29 +5,20 @@
 {% block body %}
     <h1>Tournament Bracket</h1>
 
-    <!-- Лог боя -->
-    <div class="logs">
-        <h2>Logs</h2>
-        <ul>
-            {% for log in logs %}
-                <li>{{ log }}</li>
-            {% endfor %}
-        </ul>
-    </div>
 
     <!-- Текущий уровень турнира -->
     <div class="bracket">
         <h2>Current Bracket</h2>
-        {% set sorted_levels = levels|keys|sort %} {# Получаем отсортированные ключи #}
+        {% set sorted_bracket = bracket|keys|sort %} {# Получаем отсортированные ключи #}
 
-        {% for level in sorted_levels %}
+        {% for level in sorted_bracket %}
             <div class="level" id="level-{{ level }}">
                 <h3>Level {{ level }}</h3>
                 <div class="players">
-                    {% for player in levels[level] %}
+                    {% for player in bracket[level] %}
                         <div class="player">
                             <span>{{ player.getName() }}</span>
-                            {% for stat in stats %}
+                            {% for stat in tournament.stats %}
                                 <span class="stat">{{ stat|capitalize }}: {{ attribute(player, stat) }}</span>
                             {% endfor %}
                         </div>
@@ -37,9 +28,9 @@
         {% endfor %}
     </div>
 
-{#    <form action="{{ path('start_fight', {id: id}) }}" method="post">#}
-{#        <button type="submit">Подбор соперников</button>#}
-{#    </form>#}
+{#        <form action="{{ path('choose_participans', {id: tournament.id}) }}" method="post">#}
+{#            <button type="submit">Подбор соперников</button>#}
+{#        </form>#}
     <!-- Кнопка вызова модального окна для боя -->
     <button id="openFightModal">Подбор соперников</button>
 
@@ -55,38 +46,38 @@
         </div>
     </div>
     <!-- Кнопка запуска следующего раунда -->
-    <form action="{{ path('tournament_reset', {id: id}) }}" method="post">
-        <button type="submit" class="reset-button">Перезапустить турнир</button>
-    </form>
-    <form action="{{ path('tournament_stop', {id: id}) }}" method="post">
-        <button type="submit" class="reset-button">Завершить турнир</button>
-    </form>
+{#    <form action="{{ path('tournament_reset', {id: id}) }}" method="post">#}
+{#        <button type="submit" class="reset-button">Перезапустить турнир</button>#}
+{#    </form>#}
+{#    <form action="{{ path('tournament_stop', {id: id}) }}" method="post">#}
+{#        <button type="submit" class="reset-button">Завершить турнир</button>#}
+{#    </form>#}
     <!-- Итоговые места -->
     <div class="places">
         <h2>Final Places</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Место</th>
-                <th>Игрок</th>
-                {% for stat in stats %}
-                    <th>{{ stat }}</th>
-                {% endfor %}
-            </tr>
-            </thead>
-            <tbody>
-            {% for player in places %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ player.getName() }}</td>
-                    {% for stat in stats %}
-                        <td>{{ attribute(player, 'get' ~ stat) }}</td>
-                    {% endfor %}
+{#        <table>#}
+{#            <thead>#}
+{#            <tr>#}
+{#                <th>Место</th>#}
+{#                <th>Игрок</th>#}
+{#                {% for stat in tournament.stats %}#}
+{#                    <th>{{ stat }}</th>#}
+{#                {% endfor %}#}
+{#            </tr>#}
+{#            </thead>#}
+{#            <tbody>#}
+{#            {% for player in places %}#}
+{#                <tr>#}
+{#                    <td>{{ loop.index }}</td>#}
+{#                    <td>{{ player.getName() }}</td>#}
+{#                    {% for stat in stats %}#}
+{#                        <td>{{ attribute(player, 'get' ~ stat) }}</td>#}
+{#                    {% endfor %}#}
 
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+{#                </tr>#}
+{#            {% endfor %}#}
+{#            </tbody>#}
+{#        </table>#}
     </div>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -99,7 +90,7 @@
             // Открываем модалку и подгружаем бойцов
             openModalBtn.addEventListener("click", function () {
                 modal.style.display = "block";
-                fetch("{{ path('start_fight', {id: id}) }}", { method: "POST" })
+                fetch("{{ path('choose_participans', {id: tournament.id}) }}", { method: "POST" })
                     .then(response => response.json())
                     .then(data => {
                         fightersContainer.innerHTML = "";
@@ -134,18 +125,25 @@
             });
 
             // Начинаем бой
-            startFightBtn.addEventListener("click", function () {
-                const formData = new FormData();
+            // Запуск боя
+            startFightBtn.addEventListener("click", function (event) {
+                event.preventDefault(); // Останавливаем стандартное поведение кнопки
+
+                // Создаем форму и добавляем в нее бойцов
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = "{{ path('fight', {id: tournament.id}) }}";
+
                 document.querySelectorAll('input[name="fighters[]"]').forEach(input => {
-                    formData.append("fighters[]", input.value);
+                    const hiddenInput = document.createElement("input");
+                    hiddenInput.type = "hidden";
+                    hiddenInput.name = "fighters[]";
+                    hiddenInput.value = input.value;
+                    form.appendChild(hiddenInput);
                 });
 
-                fetch("{{ path('tournament_next_fight', {id: id}) }}", {
-                    method: "POST",
-                    body: formData
-                }).then(() => {
-                    location.reload(); // Обновляем страницу после боя
-                });
+                document.body.appendChild(form);
+                form.submit(); // Отправляем форму
             });
         });
 

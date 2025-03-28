@@ -152,3 +152,41 @@ tr:nth-child(even) {
     display: inline-block;
     text-align: left;
 }
+
+
+.character-card {
+    position: relative;
+    width: 250px;
+    height: 350px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 10px;
+    margin: 10px;
+    color: white;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.character-info {
+    background: rgba(0, 0, 0, 0.5);  /* Полупрозрачный черный фон для текста */
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.character-name {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: #fff900;;
+}
+
+.character-stat {
+    margin: 5px 0;
+    font-size: 1em;
+}
+#fightersContainer {
+    display: flex;
+    justify-content: space-around;
+}

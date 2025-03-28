@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomeController!{% endblock %}
+
+{% block body %}
+    <style>
+        .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
+        .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
+    </style>
+
+    <div class="example-wrapper">
+        {% for character in characters %}
+            <div class="character-card" style="background-image: url('{{ asset('images/' ~ character.image) }}');">
+                <div class="character-info">
+                    <h3 class="character-name">{{ character.name }}</h3>
+                    <p class="character-stat">Сила: {{ character.strength }}</p>
+                    <p class="character-stat">Ловкость: {{ character.agility }}</p>
+                    <p class="character-stat">Интеллект: {{ character.intelligence }}</p>
+                    <p class="character-stat">Особые силы: {{ character.specialPowers }}</p>
+                    <p class="character-stat">Боевые навыки: {{ character.fightingSkills }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -18,36 +18,48 @@
         <p>Эта лига пуста</p>
     {% endif %}
 
-    <h2>Быстрый турнир</h2>
-    <p>Выбери статы</p>
-    <form method="post" action="{{ path('fastTournament', {id: id}) }}">
-        <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>
-        <label><input type="checkbox" name="stats[]" value="strength"> Сила</label>
-        <label><input type="checkbox" name="stats[]" value="agility"> Ловкость</label>
-        <label><input type="checkbox" name="stats[]" value="specialPowers"> Особые умения</label>
-        <label><input type="checkbox" name="stats[]" value="fightingSkills"> Бойцовские навыки</label>
-        <button type="submit">Запустить турнир</button>
-    </form>
+{#    <h2>Быстрый турнир</h2>#}
+{#    <p>Выбери статы</p>#}
+{#    <form method="post" action="{{ path('fastTournament', {id: id}) }}">#}
+{#        <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="strength"> Сила</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="agility"> Ловкость</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="specialPowers"> Особые умения</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="fightingSkills"> Бойцовские навыки</label>#}
+{#        <button type="submit">Запустить турнир</button>#}
+{#    </form>#}
 
-    <h2>Турнир по раундам</h2>
-    <p>Выбери статы</p>
-    <form method="post" action="{{ path('tournament', {id: id}) }}">
-        <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>
-        <label><input type="checkbox" name="stats[]" value="strength"> Сила</label>
-        <label><input type="checkbox" name="stats[]" value="agility"> Ловкость</label>
-        <label><input type="checkbox" name="stats[]" value="specialPowers"> Особые умения</label>
-        <label><input type="checkbox" name="stats[]" value="fightingSkills"> Бойцовские навыки</label>
-        <button type="submit">Запустить турнир</button>
-    </form>
+{#    <h2>Турнир по раундам</h2>#}
+{#    <p>Выбери статы</p>#}
+{#    <form method="post" action="{{ path('tournament', {id: id}) }}">#}
+{#        <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="strength"> Сила</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="agility"> Ловкость</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="specialPowers"> Особые умения</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="fightingSkills"> Бойцовские навыки</label>#}
+{#        <button type="submit">Запустить турнир</button>#}
+{#    </form>#}
 
-    <h2>Классический турнир</h2>
+{#    <h2>Классический турнир</h2>#}
+{#    <p>Выбери статы</p>#}
+{#    <form method="post" action="{{ path('classic_tournament', {id: id}) }}">#}
+{#        <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="strength"> Сила</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="agility"> Ловкость</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="specialPowers"> Особые умения</label>#}
+{#        <label><input type="checkbox" name="stats[]" value="fightingSkills"> Бойцовские навыки</label>#}
+{#        <button type="submit">Запустить турнир</button>#}
+{#    </form>#}
+
+    <h2>Экспериментально</h2>
     <p>Выбери статы</p>
-    <form method="post" action="{{ path('classic_tournament', {id: id}) }}">
+    <form method="post" action="{{ path('create_tournament', {id: id}) }}">
         <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>
         <label><input type="checkbox" name="stats[]" value="strength"> Сила</label>
         <label><input type="checkbox" name="stats[]" value="agility"> Ловкость</label>
         <label><input type="checkbox" name="stats[]" value="specialPowers"> Особые умения</label>
         <label><input type="checkbox" name="stats[]" value="fightingSkills"> Бойцовские навыки</label>
+        <input type="hidden" name="type" value="classic">
         <button type="submit">Запустить турнир</button>
     </form>
 </div>
