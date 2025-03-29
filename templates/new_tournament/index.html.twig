@@ -55,29 +55,22 @@
     <!-- Итоговые места -->
     <div class="places">
         <h2>Final Places</h2>
-{#        <table>#}
-{#            <thead>#}
-{#            <tr>#}
-{#                <th>Место</th>#}
-{#                <th>Игрок</th>#}
-{#                {% for stat in tournament.stats %}#}
-{#                    <th>{{ stat }}</th>#}
-{#                {% endfor %}#}
-{#            </tr>#}
-{#            </thead>#}
-{#            <tbody>#}
-{#            {% for player in places %}#}
-{#                <tr>#}
-{#                    <td>{{ loop.index }}</td>#}
-{#                    <td>{{ player.getName() }}</td>#}
-{#                    {% for stat in stats %}#}
-{#                        <td>{{ attribute(player, 'get' ~ stat) }}</td>#}
-{#                    {% endfor %}#}
-
-{#                </tr>#}
-{#            {% endfor %}#}
-{#            </tbody>#}
-{#        </table>#}
+        <table>
+            <thead>
+            <tr>
+                <th>Место</th>
+                <th>Игрок</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for placeData in places|sort((a, b) => a.place <=> b.place) %}
+                <tr>
+                    <td>{{ placeData.place }}</td>
+                    <td>{{ placeData.character.name }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
     <script>
         document.addEventListener("DOMContentLoaded", function () {

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Character;
 use App\Entity\League;
 use App\Entity\Tournament;
+use App\Entity\TournamentCharacter;
 use App\Service\TournamentService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,11 +34,13 @@ final class NewTournamentController extends AbstractController
         $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
 
         $bracket = $this->tournamentService->deserializeLevels($tournament->getLevels(), $serializer);
+        $places = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
 
         return $this->render('new_tournament/index.html.twig', [
             'tournament' => $tournament,
             'bracket' => $bracket,
-            'id' => $id
+            'id' => $id,
+            'places' => $places
         ]);
     }
     #[Route('/tournament/create-from-league/{id}', name: 'create_tournament')]
@@ -54,7 +57,6 @@ final class NewTournamentController extends AbstractController
 
         $jsonArray = [];
         foreach ($characters as $character) {
-            //$tournament->addCharacter($character);
             $jsonArray[] = $serializer->serialize(
                 $character,
                 'json',
@@ -77,6 +79,15 @@ final class NewTournamentController extends AbstractController
         $tournament->setIsActive(true);
 
         $this->entityManager->persist($tournament);
+
+        foreach ($characters as $character) {
+            $tournamentCharacter = new TournamentCharacter();
+            $tournamentCharacter->setTournament($tournament);
+            $tournamentCharacter->setCharacter($character);
+
+            $this->entityManager->persist($tournamentCharacter);
+        }
+
         $this->entityManager->flush();
 
         return $this->redirectToRoute('app_new_tournament', [ 'id' => $tournament->getId()]);
@@ -155,7 +166,20 @@ final class NewTournamentController extends AbstractController
 
         foreach ($levels as $key => &$level) {
             if (count($level) < 2) {
-                $this->tournamentService->insertWithShift($places, $key, $level[0]);
+                $placesData = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
+                $places = [];
+                foreach ($placesData as $place) {
+                    $places[] = $place->getPlace();
+                }
+
+                $character = $this->entityManager->getRepository(TournamentCharacter::class)->findOneBy([
+                    "tournament" => $id,
+                    "character" => $level[0]
+                    ]);
+                $place = $this->tournamentService->setPlace($places, $key);
+
+                $character->setPlace($place);
+                $this->entityManager->persist($character);
                 unset($levels[$key]);
                 continue;
             }

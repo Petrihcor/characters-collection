@@ -461,7 +461,6 @@ class TournamentService
     public function runClassicTournament2(array $fighters, Tournament $tournament, array $levels)
     {
 
-        $places = [];
 
         $levelKeys = array_keys($levels);
 
@@ -497,9 +496,24 @@ class TournamentService
 
         return [
             'levels' => $levels,
-            'places'=> $places,
             'winners' => $winners,
             'losers' => $losers
         ];
+    }
+
+    public function setPlace(array $places, int $key)
+    {
+        // Создаем массив от 1 до N (чтобы не зависеть от изменения индексов)
+        $allPlaces = range(1, count($places));
+
+        // Ищем свободные места (где нет значений)
+        $emptyPlaces = array_diff($allPlaces, $places);
+
+        if (!empty($emptyPlaces)) {
+            return $key > 0 ? min($emptyPlaces) : max($emptyPlaces);
+        }
+
+        // Если все места заняты, назначаем следующее по порядку
+        return max($allPlaces) + 1;
     }
 }

@@ -22,11 +22,7 @@ class Tournament
     #[ORM\Column]
     private ?int $number_participants = null;
 
-    /**
-     * @var Collection<int, Character>
-     */
-    #[ORM\ManyToMany(targetEntity: Character::class)]
-    private Collection $characters;
+
 
     #[ORM\Column(length: 255)]
     private ?string $type = null;
@@ -38,7 +34,6 @@ class Tournament
     private array $stats = [];
 
 
-
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -48,11 +43,18 @@ class Tournament
     #[ORM\Column]
     private ?bool $isActive = null;
 
+    /**
+     * @var Collection<int, TournamentCharacter>
+     */
+    #[ORM\OneToMany(targetEntity: TournamentCharacter::class, mappedBy: 'tournament')]
+    private Collection $TournamentCharacters;
+
 
 
     public function __construct()
     {
         $this->characters = new ArrayCollection();
+        $this->TournamentCharacters = new ArrayCollection();
 
     }
 
@@ -85,29 +87,6 @@ class Tournament
         return $this;
     }
 
-    /**
-     * @return Collection<int, Character>
-     */
-    public function getCharacters(): Collection
-    {
-        return $this->characters;
-    }
-
-    public function addCharacter(Character $character): static
-    {
-        if (!$this->characters->contains($character)) {
-            $this->characters->add($character);
-        }
-
-        return $this;
-    }
-
-    public function removeCharacter(Character $character): static
-    {
-        $this->characters->removeElement($character);
-
-        return $this;
-    }
 
     public function getType(): ?string
     {
@@ -178,6 +157,36 @@ class Tournament
     public function setIsActive(bool $isActive): static
     {
         $this->isActive = $isActive;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TournamentCharacter>
+     */
+    public function getTournamentCharacters(): Collection
+    {
+        return $this->TournamentCharacters;
+    }
+
+    public function addTournamentCharacter(TournamentCharacter $tournamentCharacter): static
+    {
+        if (!$this->TournamentCharacters->contains($tournamentCharacter)) {
+            $this->TournamentCharacters->add($tournamentCharacter);
+            $tournamentCharacter->setTournament($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTournamentCharacter(TournamentCharacter $tournamentCharacter): static
+    {
+        if ($this->TournamentCharacters->removeElement($tournamentCharacter)) {
+            // set the owning side to null (unless already changed)
+            if ($tournamentCharacter->getTournament() === $this) {
+                $tournamentCharacter->setTournament(null);
+            }
+        }
 
         return $this;
     }
