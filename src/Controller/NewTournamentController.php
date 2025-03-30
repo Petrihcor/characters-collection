@@ -156,13 +156,53 @@ final class NewTournamentController extends AbstractController
 
         $result = $this->tournamentService->runClassicTournament2($fighters, $tournament, $levels);
 
-        foreach ($result['winners'] as $winner) {
-            $winners[] = $winner;
-        }
-        foreach ($result['losers'] as $loser) {
-            $losers[] = $loser;
-        }
+        //TODO: вынести в сервис
+        //FIXME: сделать что-то с этой убогой проверкой
+        if (empty($result['winners']) && empty($result['losers'])) {
 
+            foreach ($levels as $key => &$level) {
+                $placesData = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
+                $places = [];
+                foreach ($placesData as $place) {
+                    $places[] = $place->getPlace();
+                }
+
+                $character = $this->entityManager->getRepository(TournamentCharacter::class)->findOneBy([
+                    "tournament" => $id,
+                    "character" => $level[0]
+                ]);
+                $place = $this->tournamentService->setPlace($places, $key);
+
+                $character->setPlace($place);
+                $this->entityManager->persist($character);
+                unset($levels[$key]);
+            }
+            foreach ($levels as &$level) {
+                foreach ($level as $k => $character) {
+                    $level[$k] = $serializer->serialize(
+                        $character,
+                        'json',
+                        [
+                            'groups' => 'character_group',
+                            'json_encode_options' => JSON_UNESCAPED_UNICODE,
+                        ],
+                    );
+                }
+                $tournament->setLevels($levels);
+                $this->entityManager->persist($tournament);
+                $this->entityManager->flush();
+
+                return $this->redirectToRoute('app_new_tournament', ['id' => $id]);
+
+            }
+        } else {
+            foreach ($result['winners'] as $winner) {
+                $winners[] = $winner;
+            }
+            foreach ($result['losers'] as $loser) {
+                $losers[] = $loser;
+            }
+        }
 
         foreach ($levels as $key => &$level) {
             if (count($level) < 2) {
@@ -231,8 +271,6 @@ final class NewTournamentController extends AbstractController
             }
 
         }
-
-        // Если нужно вернуть сразу результат, а не редирект
 
         $tournament->setLevels($levels);
         $this->entityManager->persist($tournament);

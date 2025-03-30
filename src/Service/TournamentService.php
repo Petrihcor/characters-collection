@@ -463,7 +463,10 @@ class TournamentService
 
 
         $levelKeys = array_keys($levels);
-
+        //FIXME: должен быть какой-то другой способ для сравнения персонажей и распределения по сетке,
+        // ежели заходить по всем пунктам через foreach
+        $winners = [];
+        $losers = [];
         foreach ($levelKeys as $key) {
             $level = $levels[$key];
             $playerCount = count($level);
@@ -489,7 +492,6 @@ class TournamentService
                 foreach ($result['losers'] as $loser) {
                     $losers[] = $loser;
                 }
-
                 break;
             }
         }
