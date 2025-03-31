@@ -359,27 +359,33 @@ class TournamentService
     public function chooseOpponents(array &$levels): array
     {
         $fighters = [];
-
-        foreach ($levels as &$level) {
+        $levelKey = null;
+        foreach ($levels as $key => &$level) {
 
             if (count($level) < 2) {
                 continue;
             }
             if (count($level) % 2 == 0) {
-
+                $levelKey = $key;
                 for ($i = 0; $i < count($level); $i += 2 ) {
                     $fighters[] = array_shift($level);
                     $fighters[] = array_shift($level);
+
                     break;
                 }
                 break;
             } else {
+                $levelKey = $key;
                 $fighters = array_splice($level, 0, 3);
                 break;
             }
 
         }
-        return $fighters;
+        return [
+            'fighters' => $fighters,
+            'key' => $levelKey
+
+        ];
     }
 
     public function runClassicTournament(array $fighters, array $stats, array $tournamentData)
@@ -458,46 +464,32 @@ class TournamentService
         return $bracket;
     }
 
-    public function runClassicTournament2(array $fighters, Tournament $tournament, array $levels)
+    public function runClassicTournament2(array $fighters, Tournament $tournament, array $levels, int $key)
     {
 
-
-        $levelKeys = array_keys($levels);
-        //FIXME: должен быть какой-то другой способ для сравнения персонажей и распределения по сетке,
-        // ежели заходить по всем пунктам через foreach
         $winners = [];
         $losers = [];
-        foreach ($levelKeys as $key) {
-            $level = $levels[$key];
-            $playerCount = count($level);
+        if (count($levels[$key]) % 2 == 0) {
+            $hero1 = array_shift($fighters);
+            $hero2 = array_shift($fighters);
+            $result = $this->multipleCompare($hero1, $hero2, $tournament->getStats());
 
-            if ($playerCount == 1) {
-                continue;
+            $winners[] = $result['winner'];
+            $losers[] = $result['loser'];
+
+        } else {
+            $result = $this->multipleOddCompare($tournament->getStats(), $key, $fighters);
+
+            foreach ($result['winners'] as $winner) {
+                $winners[] = $winner;
             }
-
-            if ($playerCount % 2 == 0) {
-                $hero1 = array_shift($fighters);
-                $hero2 = array_shift($fighters);
-                $result = $this->multipleCompare($hero1, $hero2, $tournament->getStats());
-                $winners[] = $result['winner'];
-                $losers[] = $result['loser'];
-                break;
-
-            } else {
-                $result = $this->multipleOddCompare($tournament->getStats(), $key, $fighters);
-
-                foreach ($result['winners'] as $winner) {
-                    $winners[] = $winner;
-                }
-                foreach ($result['losers'] as $loser) {
-                    $losers[] = $loser;
-                }
-                break;
+            foreach ($result['losers'] as $loser) {
+                $losers[] = $loser;
             }
         }
 
         return [
-            'levels' => $levels,
+
             'winners' => $winners,
             'losers' => $losers
         ];

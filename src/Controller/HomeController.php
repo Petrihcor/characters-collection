@@ -48,4 +48,13 @@ final class HomeController extends AbstractController
             'tournaments' => $tournaments
         ]);
     }
+
+    #[Route('/tournaments/finished', name: 'finished_tournaments')]
+    public function showFinishedTournaments(EntityManagerInterface $em)
+    {
+        $tournaments = $em->getRepository(Tournament::class)->findBy(['isActive' => false]);
+        return $this->render('tournament/activeTournaments.html.twig', [
+            'tournaments' => $tournaments
+        ]);
+    }
 }

@@ -96,14 +96,15 @@ final class NewTournamentController extends AbstractController
     #[Route('/new/tournament/{id}/fight', name: 'choose_participans')]
     public function startFight(int $id, Request $request, SerializerInterface $serializer)
     {
+
         $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
 
         $jsonBracket = $tournament->getLevels();
 
         $bracket = [];
-        foreach ($jsonBracket as $key => $level) {
-            foreach ($level as $k => $character) {
-                $level[$k] = $serializer->deserialize(
+        foreach ($jsonBracket as $key => $levelData) {
+            foreach ($levelData as $k => $character) {
+                $levelData[$k] = $serializer->deserialize(
                     $character,          // JSON строка
                     Character::class,     // Класс, в который нужно десериализовать
                     'json',               // Формат
@@ -112,11 +113,15 @@ final class NewTournamentController extends AbstractController
                     ]
                 );
             }
-            $bracket[$key] = $level;
+            $bracket[$key] = $levelData;
         }
         $stats = $tournament->getStats();
 
-        $fighters = $this->tournamentService->chooseOpponents($bracket);
+        $result = $this->tournamentService->chooseOpponents($bracket);
+
+        // Извлекаем бойцов и ключ уровня из результата
+        $fighters = $result['fighters'];
+        $levelKey = $result['key'];
 
         $fightersData = array_map(function ($fighter) use ($stats) {
             $fighterData = [
@@ -138,7 +143,8 @@ final class NewTournamentController extends AbstractController
 
 
         return $this->json([
-            'fighters' => $fightersData
+            'fighters' => $fightersData,
+            'level' => $levelKey
         ]);
     }
 
@@ -146,20 +152,13 @@ final class NewTournamentController extends AbstractController
     public function fight(int $id, Request $request, SerializerInterface $serializer) {
 
 
+
         $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
         $levels = $this->tournamentService->deserializeLevels($tournament->getLevels(), $serializer);
-        $fighterIds = $request->request->all('fighters');
 
-
-        $fighters = $this->entityManager->getRepository(Character::class)->findBy(['id' => $fighterIds]);
-
-
-        $result = $this->tournamentService->runClassicTournament2($fighters, $tournament, $levels);
-
-        //TODO: вынести в сервис
-        //FIXME: сделать что-то с этой убогой проверкой
-        if (empty($result['winners']) && empty($result['losers'])) {
-
+        $key = $request->request->get('level');
+        //TODO: небольшой костыль в виде проверки $key, может быть пофикшу
+        if ($key === "") {
             foreach ($levels as $key => &$level) {
                 $placesData = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
                 $places = [];
@@ -188,95 +187,109 @@ final class NewTournamentController extends AbstractController
                         ],
                     );
                 }
-                $tournament->setLevels($levels);
-                $this->entityManager->persist($tournament);
-                $this->entityManager->flush();
-
-                return $this->redirectToRoute('app_new_tournament', ['id' => $id]);
 
             }
+            $tournament->setLevels($levels);
+            $this->entityManager->persist($tournament);
+            $this->entityManager->flush();
+
+            return $this->redirectToRoute('app_new_tournament', ['id' => $id]);
         } else {
+            $fighterIds = $request->request->all('fighters');
+            $fighters = $this->entityManager->getRepository(Character::class)->findBy(['id' => $fighterIds]);
+
+            //TODO: сделать параметр, который будет указывать, в какой из уровней заходить, чтобы не делать foreach
+            $result = $this->tournamentService->runClassicTournament2($fighters, $tournament, $levels, $key);
             foreach ($result['winners'] as $winner) {
                 $winners[] = $winner;
             }
             foreach ($result['losers'] as $loser) {
                 $losers[] = $loser;
             }
-        }
 
-        foreach ($levels as $key => &$level) {
-            if (count($level) < 2) {
-                $placesData = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
-                $places = [];
-                foreach ($placesData as $place) {
-                    $places[] = $place->getPlace();
-                }
+            foreach ($levels as $key => &$level) {
+                if (count($level) < 2) {
+                    $placesData = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
+                    $places = [];
+                    foreach ($placesData as $place) {
+                        $places[] = $place->getPlace();
+                    }
 
-                $character = $this->entityManager->getRepository(TournamentCharacter::class)->findOneBy([
-                    "tournament" => $id,
-                    "character" => $level[0]
+                    $character = $this->entityManager->getRepository(TournamentCharacter::class)->findOneBy([
+                        "tournament" => $id,
+                        "character" => $level[0]
                     ]);
-                $place = $this->tournamentService->setPlace($places, $key);
+                    $place = $this->tournamentService->setPlace($places, $key);
 
-                $character->setPlace($place);
-                $this->entityManager->persist($character);
-                unset($levels[$key]);
-                continue;
-            }
-
-            if (!isset($levels[$key + 1])) {
-                $levels[$key + 1] = [];
-            }
-            $levels[$key + 1] = array_merge($levels[$key + 1], $winners);
-
-            if (!isset($levels[$key - 1])) {
-                $levels[$key - 1] = [];
-            }
-            $levels[$key - 1] = array_merge($levels[$key - 1], $losers);
-
-
-            // Удаляем победителей и проигравших из текущего уровня
-            $level = array_values(array_filter($level, function ($player) use ($winners, $losers) {
-                foreach ($winners as $winner) {
-                    if ($player->getId() === $winner->getId()) {
-                        return false;
-                    }
+                    $character->setPlace($place);
+                    $this->entityManager->persist($character);
+                    unset($levels[$key]);
+                    continue;
                 }
-                foreach ($losers as $loser) {
-                    if ($player->getId() === $loser->getId()) {
-                        return false;
-                    }
+
+                if (!isset($levels[$key + 1])) {
+                    $levels[$key + 1] = [];
                 }
-                return true;
-            }));
+                $levels[$key + 1] = array_merge($levels[$key + 1], $winners);
 
-            // Если уровень стал пустым, удаляем его
-            if (empty($level)) {
-                unset($levels[$key]);
+                if (!isset($levels[$key - 1])) {
+                    $levels[$key - 1] = [];
+                }
+                $levels[$key - 1] = array_merge($levels[$key - 1], $losers);
+
+
+                // Удаляем победителей и проигравших из текущего уровня
+                $level = array_values(array_filter($level, function ($player) use ($winners, $losers) {
+                    foreach ($winners as $winner) {
+                        if ($player->getId() === $winner->getId()) {
+                            return false;
+                        }
+                    }
+                    foreach ($losers as $loser) {
+                        if ($player->getId() === $loser->getId()) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }));
+
+                // Если уровень стал пустым, удаляем его
+                if (empty($level)) {
+                    unset($levels[$key]);
+                }
+                break;
             }
-            break;
-        }
 
+            foreach ($levels as &$level) {
+                foreach ($level as $k => $character) {
+                    $level[$k] = $serializer->serialize(
+                        $character,
+                        'json',
+                        [
+                            'groups' => 'character_group',
+                            'json_encode_options' => JSON_UNESCAPED_UNICODE,
+                        ],
+                    );
+                }
 
-        foreach ($levels as &$level) {
-            foreach ($level as $k => $character) {
-                $level[$k] = $serializer->serialize(
-                    $character,
-                    'json',
-                    [
-                        'groups' => 'character_group',
-                        'json_encode_options' => JSON_UNESCAPED_UNICODE,
-                    ],
-                );
             }
 
-        }
+            $tournament->setLevels($levels);
+            $this->entityManager->persist($tournament);
+            $this->entityManager->flush();
 
-        $tournament->setLevels($levels);
+            return $this->redirectToRoute('app_new_tournament', ['id' => $id]);
+        }
+    }
+
+    #[Route('/new/tournament/{id}/stop', name: 'stop_tournament')]
+    public function stopTournament(int $id)
+    {
+        $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
+        $tournament->setIsActive(false);
         $this->entityManager->persist($tournament);
         $this->entityManager->flush();
 
-        return $this->redirectToRoute('app_new_tournament', ['id' => $id]);
-
+        return $this->redirectToRoute('finished_tournaments');
     }
 }

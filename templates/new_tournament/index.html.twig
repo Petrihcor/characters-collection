@@ -32,8 +32,14 @@
 {#            <button type="submit">Подбор соперников</button>#}
 {#        </form>#}
     <!-- Кнопка вызова модального окна для боя -->
-    <button id="openFightModal">Подбор соперников</button>
 
+    {% if bracket is empty %}
+        <form action="{{ path('stop_tournament', {id: id}) }}" method="post">
+            <button type="submit" class="reset-button">Завершить турнир</button>
+        </form>
+    {% else %}
+        <button id="openFightModal">Подбор соперников</button>
+    {% endif %}
     <!-- Модальное окно для боя -->
     <div id="fightModal" class="modal">
         <div class="modal-content">
@@ -49,9 +55,7 @@
 {#    <form action="{{ path('tournament_reset', {id: id}) }}" method="post">#}
 {#        <button type="submit" class="reset-button">Перезапустить турнир</button>#}
 {#    </form>#}
-{#    <form action="{{ path('tournament_stop', {id: id}) }}" method="post">#}
-{#        <button type="submit" class="reset-button">Завершить турнир</button>#}
-{#    </form>#}
+
     <!-- Итоговые места -->
     <div class="places">
         <h2>Final Places</h2>
@@ -86,31 +90,33 @@
                 fetch("{{ path('choose_participans', {id: tournament.id}) }}", { method: "POST" })
                     .then(response => response.json())
                     .then(data => {
-                        fightersContainer.innerHTML = "";
+                        fightersContainer.innerHTML = ""; // Очищаем контейнер с бойцами
                         data.fighters.forEach(fighter => {
                             let statsHtml = `
-                    <p class="character-stat">Сила: ${fighter.strength}</p>
-                    <p class="character-stat">Ловкость: ${fighter.agility}</p>
-                    <p class="character-stat">Интеллект: ${fighter.intelligence}</p>
-                    <p class="character-stat">Особые умения: ${fighter.specialPowers}</p>
-                    <p class="character-stat">Бойцовские навыки: ${fighter.fightingSkills}</p>
-                `;
+                        <p class="character-stat">Сила: ${fighter.strength}</p>
+                        <p class="character-stat">Ловкость: ${fighter.agility}</p>
+                        <p class="character-stat">Интеллект: ${fighter.intelligence}</p>
+                        <p class="character-stat">Особые умения: ${fighter.specialPowers}</p>
+                        <p class="character-stat">Бойцовские навыки: ${fighter.fightingSkills}</p>
+                    `;
 
                             let fighterHtml = `
-                    <div class="character-card" style="background-image: url('/images/${fighter.image}');">
-                        <div class="character-info">
-                            <h3 class="character-name">${fighter.name}</h3>
-                            ${statsHtml}
+                        <div class="character-card" style="background-image: url('/images/${fighter.image}');">
+                            <div class="character-info">
+                                <h3 class="character-name">${fighter.name}</h3>
+                                ${statsHtml}
+                            </div>
+                            <input type="hidden" name="fighters[]" value="${fighter.id}">
                         </div>
-                        <input type="hidden" name="fighters[]" value="${fighter.id}">
-                    </div>
-                `;
+                    `;
 
                             fightersContainer.innerHTML += fighterHtml;
                         });
+
+                        // Сохраняем level в переменную для использования при отправке формы
+                        window.currentLevel = data.level; // Сохраняем уровень в глобальную переменную
                     });
             });
-
 
             // Закрываем модалку
             closeModalBtn.addEventListener("click", function () {
@@ -118,7 +124,6 @@
             });
 
             // Начинаем бой
-            // Запуск боя
             startFightBtn.addEventListener("click", function (event) {
                 event.preventDefault(); // Останавливаем стандартное поведение кнопки
 
@@ -127,6 +132,7 @@
                 form.method = "POST";
                 form.action = "{{ path('fight', {id: tournament.id}) }}";
 
+                // Добавляем бойцов в форму
                 document.querySelectorAll('input[name="fighters[]"]').forEach(input => {
                     const hiddenInput = document.createElement("input");
                     hiddenInput.type = "hidden";
@@ -135,8 +141,16 @@
                     form.appendChild(hiddenInput);
                 });
 
+                // Добавляем level в форму
+                const levelInput = document.createElement("input");
+                levelInput.type = "hidden";
+                levelInput.name = "level";  // Параметр для передачи уровня на сервер
+                levelInput.value = window.currentLevel; // Используем переменную, где хранится level
+                form.appendChild(levelInput);
+
+                // Отправляем форму
                 document.body.appendChild(form);
-                form.submit(); // Отправляем форму
+                form.submit();
             });
         });
 
