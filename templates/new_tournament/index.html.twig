@@ -92,23 +92,25 @@
                     .then(data => {
                         fightersContainer.innerHTML = ""; // Очищаем контейнер с бойцами
                         data.fighters.forEach(fighter => {
-                            let statsHtml = `
-                        <p class="character-stat">Сила: ${fighter.strength}</p>
-                        <p class="character-stat">Ловкость: ${fighter.agility}</p>
-                        <p class="character-stat">Интеллект: ${fighter.intelligence}</p>
-                        <p class="character-stat">Особые умения: ${fighter.specialPowers}</p>
-                        <p class="character-stat">Бойцовские навыки: ${fighter.fightingSkills}</p>
-                    `;
+                            let statsHtml = "";
+                            Object.entries(fighter).forEach(([key, value]) => {
+                                if (key !== "id" && key !== "name" && key !== "image") { // Исключаем ненужные поля
+                                    statsHtml += `<p>${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`;
+                                }
+                            });
 
                             let fighterHtml = `
-                        <div class="character-card" style="background-image: url('/images/${fighter.image}');">
-                            <div class="character-info">
-                                <h3 class="character-name">${fighter.name}</h3>
-                                ${statsHtml}
-                            </div>
-                            <input type="hidden" name="fighters[]" value="${fighter.id}">
-                        </div>
-                    `;
+                                <div class="character-card" style="background-image: url('/images/${fighter.image}');">
+                                    <div class="character-info">
+                                        <h3 class="character-name">${fighter.name}</h3>
+                                        ${Object.entries(fighter)
+                                                            .filter(([key]) => key !== "id" && key !== "name" && key !== "image")
+                                                            .map(([key, value]) => `<p class="character-stat">${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`)
+                                                            .join("")}
+                                    </div>
+                                    <input type="hidden" name="fighters[]" value="${fighter.id}">
+                                </div>
+                            `;
 
                             fightersContainer.innerHTML += fighterHtml;
                         });
@@ -123,35 +125,43 @@
                 modal.style.display = "none";
             });
 
-            // Начинаем бой
             startFightBtn.addEventListener("click", function (event) {
-                event.preventDefault(); // Останавливаем стандартное поведение кнопки
+                event.preventDefault();
 
-                // Создаем форму и добавляем в нее бойцов
-                const form = document.createElement("form");
-                form.method = "POST";
-                form.action = "{{ path('fight', {id: tournament.id}) }}";
-
-                // Добавляем бойцов в форму
+                const formData = new FormData();
                 document.querySelectorAll('input[name="fighters[]"]').forEach(input => {
-                    const hiddenInput = document.createElement("input");
-                    hiddenInput.type = "hidden";
-                    hiddenInput.name = "fighters[]";
-                    hiddenInput.value = input.value;
-                    form.appendChild(hiddenInput);
+                    formData.append("fighters[]", input.value);
                 });
+                formData.append("level", window.currentLevel);
 
-                // Добавляем level в форму
-                const levelInput = document.createElement("input");
-                levelInput.type = "hidden";
-                levelInput.name = "level";  // Параметр для передачи уровня на сервер
-                levelInput.value = window.currentLevel; // Используем переменную, где хранится level
-                form.appendChild(levelInput);
+                fetch("{{ path('fight', {id: tournament.id}) }}", {
+                    method: "POST",
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.winner) {
+                            // Отрисовываем победителя, если он есть
+                            fightersContainer.innerHTML = `
+            <h3>🏆 Победитель: ${data.winner.name} 🏆</h3>
+            <img src="/images/${data.winner.image}" alt="${data.winner.name}" style="width:150px; height:150px; border-radius:50%;">
+        `;
+                        } else {
+                            // Если победителя нет, просто обновляем сетку
+                            setTimeout(() => {
+                                updateBracket(data.newBracket);
+                            }, 100);
+                        }
 
-                // Отправляем форму
-                document.body.appendChild(form);
-                form.submit();
+                        // Через 3 секунды закрываем модалку
+                        setTimeout(() => {
+                            modal.style.display = "none";
+                            location.reload(); // Можно заменить на динамическое обновление сетки
+                        }, 3000);
+                    });
             });
+
+
         });
 
     </script>

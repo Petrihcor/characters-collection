@@ -8,6 +8,7 @@ use App\Entity\Tournament;
 use App\Entity\TournamentCharacter;
 use App\Service\TournamentService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,11 +21,13 @@ final class NewTournamentController extends AbstractController
 {
     private $tournamentService;
     private $entityManager;
+    private $logger;
 
-    public function __construct(TournamentService $tournamentService, EntityManagerInterface $entityManager)
+    public function __construct(TournamentService $tournamentService, EntityManagerInterface $entityManager, LoggerInterface $logger)
     {
         $this->tournamentService = $tournamentService;
         $this->entityManager = $entityManager;
+        $this->logger = $logger;
     }
 
     #[Route('/new/tournament/{id}', name: 'app_new_tournament')]
@@ -157,8 +160,9 @@ final class NewTournamentController extends AbstractController
         $levels = $this->tournamentService->deserializeLevels($tournament->getLevels(), $serializer);
 
         $key = $request->request->get('level');
+        $this->logger->info('Key value:', ['key' => $key]);
         //TODO: небольшой костыль в виде проверки $key, может быть пофикшу
-        if ($key === "") {
+        if ($key == "null") {
             foreach ($levels as $key => &$level) {
                 $placesData = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
                 $places = [];
@@ -193,7 +197,13 @@ final class NewTournamentController extends AbstractController
             $this->entityManager->persist($tournament);
             $this->entityManager->flush();
 
-            return $this->redirectToRoute('app_new_tournament', ['id' => $id]);
+            $response = $this->json([
+                'status' => 'success',
+                'newBracket' => $tournament->getLevels()
+            ]);
+            // Log the response to check what is being returned
+            error_log($response->getContent());
+            return $response;
         } else {
             $fighterIds = $request->request->all('fighters');
             $fighters = $this->entityManager->getRepository(Character::class)->findBy(['id' => $fighterIds]);
@@ -278,7 +288,16 @@ final class NewTournamentController extends AbstractController
             $this->entityManager->persist($tournament);
             $this->entityManager->flush();
 
-            return $this->redirectToRoute('app_new_tournament', ['id' => $id]);
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Бой проведен!',
+                'winner' => [
+                    'id' => $result['winners'][0]->getId(),
+                    'name' => $result['winners'][0]->getName(),
+                    'image' => $result['winners'][0]->getImage(),
+                ],
+                'newBracket' => $tournament->getLevels() // Можно сразу обновлять турнирную сетку
+            ]);
         }
     }
 
