@@ -190,3 +190,15 @@ tr:nth-child(even) {
     display: flex;
     justify-content: space-around;
 }
+
+.winner-highlight {
+    background-color: #4CAF50 !important; /* Зелёный цвет для победителя */
+    color: white;
+    font-weight: bold;
+}
+
+.loser-highlight {
+    background-color: #FF4C4C !important; /* Красный цвет для проигравшего */
+    color: white;
+    text-decoration: line-through;
+}

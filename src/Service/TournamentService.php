@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\Character;
 use App\Entity\Tournament;
+use App\Entity\TournamentCharacter;
 use Doctrine\ORM\EntityManagerInterface;
 use phpDocumentor\Reflection\DocBlock\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -42,62 +43,6 @@ class TournamentService
         ];
     }
 
-//    public function runClassicTournament(array $stats, array $tournamentData)
-//    {
-//        $levels = $tournamentData['levels'];
-//        $logs = $tournamentData['logs'];
-//        $round = $tournamentData['round'];
-//        $places = $tournamentData['places'];
-//
-//
-//        $levelKeys = array_keys($levels);
-//
-//        foreach ($levelKeys as $key) {
-//            $level = &$levels[$key];
-//            $playerCount = count($level);
-//
-//            if ($playerCount == 1) {
-//                continue;
-//            }
-//
-//            if ($playerCount % 2 == 0) {
-//                $hero1 = array_shift($level);
-//                $hero2 = array_shift($level);
-//                $result = $this->multipleCompare($hero1, $hero2, $stats, $round);
-//                $logs[] = $result['log'];
-//                $winners[] = $result['winner'];
-//                $losers[] = $result['loser'];
-//                break;
-//            } else {
-//                $result = $this->multipleOddCompare($stats, $key, $level, $round);
-//
-//                foreach ($result['winners'] as $winner) {
-//                    $winners[] = $winner;
-//                }
-//                foreach ($result['losers'] as $loser) {
-//                    $losers[] = $loser;
-//                }
-//
-//                $logs[] = $result['logs'];
-//                break;
-//            }
-//        }
-//        //пока что вот такой костыль для распределения последних мест, когда битв не осталось
-//        if (!isset($winners) || !isset($losers)) {
-//            return [
-//                'levels' => $levels,
-//                'places'=> $places,
-//                'logs'=> $logs,
-//            ];
-//        }
-//        return [
-//            'levels' => $levels,
-//            'places'=> $places,
-//            'logs'=> $logs,
-//            'winners' => $winners,
-//            'losers' => $losers
-//        ];
-//    }
 
     public function runTournament(array $stats, array $tournamentData)
     {
@@ -360,6 +305,7 @@ class TournamentService
     {
         $fighters = [];
         $levelKey = null;
+        //FIXME: найти способ избавиться от foreach и указывать в какой именно ключ надо зайти
         foreach ($levels as $key => &$level) {
 
             if (count($level) < 2) {
@@ -368,8 +314,18 @@ class TournamentService
             if (count($level) % 2 == 0) {
                 $levelKey = $key;
                 for ($i = 0; $i < count($level); $i += 2 ) {
-                    $fighters[] = array_shift($level);
-                    $fighters[] = array_shift($level);
+                    $randomKeys = array_rand($level, 2);
+
+                    // Забираем элементы по этим случайным ключам
+                    $fighters[] = $level[$randomKeys[0]];  // Первый случайный элемент
+                    $fighters[] = $level[$randomKeys[1]];  // Второй случайный элемент
+
+                    // Убираем выбранные элементы из массива $level
+                    unset($level[$randomKeys[0]]);
+                    unset($level[$randomKeys[1]]);
+
+                    // Индексирование массива после удаления элементов
+                    $level = array_values($level);
 
                     break;
                 }
@@ -388,62 +344,6 @@ class TournamentService
         ];
     }
 
-    public function runClassicTournament(array $fighters, array $stats, array $tournamentData)
-    {
-        $levels = $tournamentData['levels'];
-        $logs = $tournamentData['logs'];
-        $round = $tournamentData['round'];
-        $places = $tournamentData['places'];
-
-
-        $levelKeys = array_keys($levels);
-
-        foreach ($levelKeys as $key) {
-            $level = &$levels[$key];
-            $playerCount = count($level);
-
-            if ($playerCount == 1) {
-                continue;
-            }
-
-            if ($playerCount % 2 == 0) {
-                $hero1 = array_shift($fighters);
-                $hero2 = array_shift($fighters);
-                $result = $this->multipleCompare($hero1, $hero2, $stats, $round);
-                $logs[] = $result['log'];
-                $winners[] = $result['winner'];
-                $losers[] = $result['loser'];
-                break;
-            } else {
-                $result = $this->multipleOddCompare($stats, $key, $fighters, $round);
-
-                foreach ($result['winners'] as $winner) {
-                    $winners[] = $winner;
-                }
-                foreach ($result['losers'] as $loser) {
-                    $losers[] = $loser;
-                }
-
-                $logs[] = $result['logs'];
-                break;
-            }
-        }
-        //TODO: убрать костыль
-        if (!isset($winners) || !isset($losers)) {
-            return [
-                'levels' => $levels,
-                'places'=> $places,
-                'logs'=> $logs,
-            ];
-        }
-        return [
-            'levels' => $levels,
-            'places'=> $places,
-            'logs'=> $logs,
-            'winners' => $winners,
-            'losers' => $losers
-        ];
-    }
 
     public function deserializeLevels(array $jsonBracket, SerializerInterface $serializer)
     {
@@ -464,7 +364,7 @@ class TournamentService
         return $bracket;
     }
 
-    public function runClassicTournament2(array $fighters, Tournament $tournament, array $levels, int $key)
+    public function runClassicTournament(array $fighters, Tournament $tournament, array $levels, int $key)
     {
 
         $winners = [];
@@ -509,5 +409,62 @@ class TournamentService
 
         // Если все места заняты, назначаем следующее по порядку
         return max($allPlaces) + 1;
+    }
+
+    public function changeBracket(array $winners, array $losers, array $bracket, EntityManagerInterface $em, int $tournamentId)
+    {
+        foreach ($bracket as $key => &$level) {
+            if (count($level) < 2) {
+                $placesData = $em->getRepository(TournamentCharacter::class)->findBy(["tournament" => $tournamentId]);
+                $places = [];
+                foreach ($placesData as $place) {
+                    $places[] = $place->getPlace();
+                }
+
+                $character = $em->getRepository(TournamentCharacter::class)->findOneBy([
+                    "tournament" => $tournamentId,
+                    "character" => $level[0]
+                ]);
+                $place = $this->setPlace($places, $key);
+
+                $character->setPlace($place);
+                $em->persist($character);
+                unset($bracket[$key]);
+                continue;
+            }
+
+            if (!isset($bracket[$key + 1])) {
+                $bracket[$key + 1] = [];
+            }
+            $bracket[$key + 1] = array_merge($bracket[$key + 1], $winners);
+
+            if (!isset($bracket[$key - 1])) {
+                $bracket[$key - 1] = [];
+            }
+            $bracket[$key - 1] = array_merge($bracket[$key - 1], $losers);
+
+
+            // Удаляем победителей и проигравших из текущего уровня
+            $level = array_values(array_filter($level, function ($player) use ($winners, $losers) {
+                foreach ($winners as $winner) {
+                    if ($player->getId() === $winner->getId()) {
+                        return false;
+                    }
+                }
+                foreach ($losers as $loser) {
+                    if ($player->getId() === $loser->getId()) {
+                        return false;
+                    }
+                }
+                return true;
+            }));
+
+            // Если уровень стал пустым, удаляем его
+            if (empty($level)) {
+                unset($bracket[$key]);
+            }
+            break;
+        }
+        return $bracket;
     }
 }

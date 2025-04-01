@@ -16,7 +16,7 @@
                 <h3>Level {{ level }}</h3>
                 <div class="players">
                     {% for player in bracket[level] %}
-                        <div class="player">
+                        <div class="player" data-id="{{ player.getid()  }}">
                             <span>{{ player.getName() }}</span>
                             {% for stat in tournament.stats %}
                                 <span class="stat">{{ stat|capitalize }}: {{ attribute(player, stat) }}</span>
@@ -44,8 +44,10 @@
     <div id="fightModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Бой</h2>
+
+            <p id="levelDisplay">Уровень: </p>
             <div id="fightersContainer">
+
                 <p>Загрузка соперников...</p>
             </div>
             <button id="startFight">Начать бой</button>
@@ -83,6 +85,13 @@
             const closeModalBtn = document.querySelector(".close");
             const startFightBtn = document.getElementById("startFight");
             const fightersContainer = document.getElementById("fightersContainer");
+            const levelDisplay = document.getElementById("levelDisplay"); // Добавленный элемент для уровня
+            const winnerId = localStorage.getItem('winnerId');
+            const loserId = localStorage.getItem('loserId');
+
+            if (winnerId && loserId) {
+                updateBracketColors(winnerId, loserId);
+            }
 
             // Открываем модалку и подгружаем бойцов
             openModalBtn.addEventListener("click", function () {
@@ -91,32 +100,29 @@
                     .then(response => response.json())
                     .then(data => {
                         fightersContainer.innerHTML = ""; // Очищаем контейнер с бойцами
-                        data.fighters.forEach(fighter => {
-                            let statsHtml = "";
-                            Object.entries(fighter).forEach(([key, value]) => {
-                                if (key !== "id" && key !== "name" && key !== "image") { // Исключаем ненужные поля
-                                    statsHtml += `<p>${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`;
-                                }
-                            });
 
+                        // Отображаем уровень в модалке
+                        levelDisplay.innerText = `Уровень: ${data.level}`;
+
+                        data.fighters.forEach(fighter => {
                             let fighterHtml = `
-                                <div class="character-card" style="background-image: url('/images/${fighter.image}');">
-                                    <div class="character-info">
-                                        <h3 class="character-name">${fighter.name}</h3>
-                                        ${Object.entries(fighter)
-                                                            .filter(([key]) => key !== "id" && key !== "name" && key !== "image")
-                                                            .map(([key, value]) => `<p class="character-stat">${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`)
-                                                            .join("")}
-                                    </div>
-                                    <input type="hidden" name="fighters[]" value="${fighter.id}">
-                                </div>
-                            `;
+                        <div class="character-card" style="background-image: url('/images/${fighter.image}');">
+                            <div class="character-info">
+                                <h3 class="character-name">${fighter.name}</h3>
+                                ${Object.entries(fighter)
+                                .filter(([key]) => key !== "id" && key !== "name" && key !== "image")
+                                .map(([key, value]) => `<p class="character-stat">${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`)
+                                .join("")}
+                            </div>
+                            <input type="hidden" name="fighters[]" value="${fighter.id}">
+                        </div>
+                    `;
 
                             fightersContainer.innerHTML += fighterHtml;
                         });
 
                         // Сохраняем level в переменную для использования при отправке формы
-                        window.currentLevel = data.level; // Сохраняем уровень в глобальную переменную
+                        window.currentLevel = data.level;
                     });
             });
 
@@ -140,28 +146,36 @@
                 })
                     .then(response => response.json())
                     .then(data => {
+                        if (data.loser) {
+                            localStorage.setItem('loserId', data.loser.id);
+                        }
                         if (data.winner) {
-                            // Отрисовываем победителя, если он есть
+                            localStorage.setItem('winnerId', data.winner.id);
                             fightersContainer.innerHTML = `
-            <h3>🏆 Победитель: ${data.winner.name} 🏆</h3>
-            <img src="/images/${data.winner.image}" alt="${data.winner.name}" style="width:150px; height:150px; border-radius:50%;">
-        `;
-                        } else {
-                            // Если победителя нет, просто обновляем сетку
-                            setTimeout(() => {
-                                updateBracket(data.newBracket);
-                            }, 100);
+                        <h3>🏆 Победитель: ${data.winner.name} 🏆</h3>
+                        <img src="/images/${data.winner.image}" alt="${data.winner.name}" style="width:150px; height:150px; border-radius:50%;">
+                    `;
                         }
 
-                        // Через 3 секунды закрываем модалку
                         setTimeout(() => {
                             modal.style.display = "none";
-                            location.reload(); // Можно заменить на динамическое обновление сетки
+                            location.reload();
                         }, 3000);
                     });
             });
+            function updateBracketColors(winnerId, loserId) {
+                setTimeout(() => {
+                    document.querySelectorAll(".player").forEach((item) => { // Был .bracket-item, исправил на .player
+                        const fighterId = item.getAttribute("data-id");
 
-
+                        if (fighterId == winnerId) {
+                            item.classList.add("winner-highlight");
+                        } else if (fighterId == loserId) {
+                            item.classList.add("loser-highlight");
+                        }
+                    });
+                }, 300);
+            }
         });
 
     </script>
