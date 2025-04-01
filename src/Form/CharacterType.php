@@ -19,7 +19,7 @@ class CharacterType extends AbstractType
             ->add('name')
             ->add('file', FileType::class, [
                 'mapped' => false,
-                'required' => true,
+                'required' => !$options['is_edit'], // Обязательно только при создании
             ])
             ->add('intelligence')
             ->add('strength')
@@ -39,6 +39,7 @@ class CharacterType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Character::class,
+            'is_edit' => false, // По умолчанию форма создания
         ]);
     }
 }
