@@ -259,4 +259,42 @@ final class TournamentController extends AbstractController
 
         return $this->redirectToRoute('finished_tournaments');
     }
+
+    #[Route('/tournament/setting/{id}', name: 'setting_tournament')]
+    public function settingTournament(int $id)
+    {
+        $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
+        $characters = [];
+        foreach ($tournament->getTournamentCharacters() as $tournamentCharacter) {
+            $characters[] = $tournamentCharacter->getCharacter();
+        }
+        return $this->render('editor/settingCustomTournament.html.twig', [
+            'tournament' => $tournament,
+            'characters' => $characters,
+            'id' => $id
+        ]);
+    }
+    #[Route('/start-custom-tournament/{id}', name: 'start_custom_tournament')]
+    public function startCustomTournament(int $id, SerializerInterface $serializer)
+    {
+        $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
+        $characters = [];
+        foreach ($tournament->getTournamentCharacters() as $tournamentCharacter) {
+            $characters[] = $serializer->serialize(
+                $tournamentCharacter->getCharacter(),
+                'json',
+                [
+                    'groups' => 'character_group',
+                    'json_encode_options' => JSON_UNESCAPED_UNICODE,
+                ],
+
+            );
+        }
+
+        $levels = [$characters];
+        $tournament->setLevels($levels);
+        $this->entityManager->persist($tournament);
+        $this->entityManager->flush();
+        return $this->redirectToRoute('app_new_tournament', [ 'id' => $tournament->getId()]);
+    }
 }

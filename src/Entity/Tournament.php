@@ -22,8 +22,6 @@ class Tournament
     #[ORM\Column]
     private ?int $number_participants = null;
 
-
-
     #[ORM\Column(length: 255)]
     private ?string $type = null;
 

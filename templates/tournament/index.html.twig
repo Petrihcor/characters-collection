@@ -8,15 +8,29 @@
     .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
 </style>
 
-<div class="example-wrapper">
-
+<div class="container">
+    <div class="character-grid">
     {% if characters %}
         {% for character in characters %}
-            <p>{{ character.name }}</p>
+            <div class="character-item">
+
+                <div class="character-card" style="background-image: url('{{ asset('images/' ~ character.image) }}');">
+                    <div class="character-info">
+                        <h3 class="character-name">{{ character.name }}</h3>
+                        <p class="character-stat">Интеллект: {{ character.intelligence }}</p>
+                        <p class="character-stat">Сила: {{ character.strength }}</p>
+                        <p class="character-stat">Ловкость: {{ character.agility }}</p>
+                        <p class="character-stat">Особые умения: {{ character.specialPowers }}</p>
+                        <p class="character-stat">Бойцовские навыки: {{ character.fightingSkills }}</p>
+                    </div>
+                </div>
+                <a href="{{ path('edit_character', { id: character.id }) }}" class="edit-button">Редактировать</a>
+            </div>
         {% endfor %}
     {% else %}
         <p>Эта лига пуста</p>
     {% endif %}
+    </div>
 
 {#    <h2>Быстрый турнир</h2>#}
 {#    <p>Выбери статы</p>#}
@@ -51,7 +65,7 @@
 {#        <button type="submit">Запустить турнир</button>#}
 {#    </form>#}
 
-    <h2>Экспериментально</h2>
+    <h2>Простое сравнивание</h2>
     <p>Выбери статы</p>
     <form method="post" action="{{ path('create_tournament', {id: id}) }}">
         <label><input type="checkbox" name="stats[]" value="intelligence"> Интеллект</label>

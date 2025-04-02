@@ -23,7 +23,7 @@ final class AnotherTournamentsController extends AbstractController
         $this->entityManager = $entityManager;
     }
 
-    #[Route('/tournament/{id}', name: 'app_tournament')]
+    #[Route('/fast-tournament/{id}', name: 'app_tournament')]
     public function index(int $id, EntityManagerInterface $em): Response
     {
         $characters = $em->getRepository(Character::class)->findBy(['league' => $id]);;

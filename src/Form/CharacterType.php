@@ -29,7 +29,7 @@ class CharacterType extends AbstractType
             ->add('description')
             ->add('league', EntityType::class, [
                 'class' => League::class,
-                'choice_label' => 'id',
+                'choice_label' => 'name',
             ])
             ->add('submit', SubmitType::class)
         ;
