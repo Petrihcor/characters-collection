@@ -7,21 +7,27 @@
 
 
     <!-- Текущий уровень турнира -->
-    <div class="bracket">
+    <div class="container">
         <h2>Current Bracket</h2>
-        {% set sorted_bracket = bracket|keys|sort %} {# Получаем отсортированные ключи #}
+        {% set sorted_bracket = bracket|keys|sort|reverse %} {# Получаем отсортированные ключи #}
 
         {% for level in sorted_bracket %}
+            <h3>Level {{ level }}</h3>
             <div class="level" id="level-{{ level }}">
-                <h3>Level {{ level }}</h3>
-                <div class="players">
+                <div class="players character-grid">
                     {% for player in bracket[level] %}
-                        <div class="player" data-id="{{ player.getid()  }}">
-                            <span>{{ player.getName() }}</span>
-                            {% for stat in tournament.stats %}
-                                <span class="stat">{{ stat|capitalize }}: {{ attribute(player, stat) }}</span>
-                            {% endfor %}
-                        </div>
+                        <div class="character-item">
+                            <div class="character-card" data-id="{{ player.getid()  }}" style="background-image: url('{{ asset('images/' ~ player.image) }}');">
+                                <div class="character-info">
+                                    <h3 class="character-name">{{ player.name }}</h3>
+                                    <p class="character-stat">Интеллект: {{ player.intelligence }}</p>
+                                    <p class="character-stat">Сила: {{ player.strength }}</p>
+                                    <p class="character-stat">Ловкость: {{ player.agility }}</p>
+                                    <p class="character-stat">Особые умения: {{ player.specialPowers }}</p>
+                                    <p class="character-stat">Бойцовские навыки: {{ player.fightingSkills }}</p>
+                                </div>
+                            </div>
+                </div>
                     {% endfor %}
                 </div>
             </div>
@@ -165,7 +171,7 @@
             });
             function updateBracketColors(winnerId, loserId) {
                 setTimeout(() => {
-                    document.querySelectorAll(".player").forEach((item) => { // Был .bracket-item, исправил на .player
+                    document.querySelectorAll(".character-card").forEach((item) => { // Был .bracket-item, исправил на .player
                         const fighterId = item.getAttribute("data-id");
 
                         if (fighterId == winnerId) {

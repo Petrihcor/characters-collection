@@ -264,15 +264,21 @@ final class TournamentController extends AbstractController
     public function settingTournament(int $id)
     {
         $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
-        $characters = [];
-        foreach ($tournament->getTournamentCharacters() as $tournamentCharacter) {
-            $characters[] = $tournamentCharacter->getCharacter();
+        if($tournament->getLevels()) {
+            return $this->render('customTournament/error.html.twig');
+        } else {
+            $characters = [];
+            foreach ($tournament->getTournamentCharacters() as $tournamentCharacter) {
+                $characters[] = $tournamentCharacter->getCharacter();
+            }
+            return $this->render('customTournament/settingCustomTournament.html.twig', [
+                'tournament' => $tournament,
+                'characters' => $characters,
+                'id' => $id
+            ]);
+
         }
-        return $this->render('customTournament/settingCustomTournament.html.twig', [
-            'tournament' => $tournament,
-            'characters' => $characters,
-            'id' => $id
-        ]);
+
     }
     #[Route('/start-custom-tournament/{id}', name: 'start_custom_tournament')]
     public function startCustomTournament(int $id, SerializerInterface $serializer)

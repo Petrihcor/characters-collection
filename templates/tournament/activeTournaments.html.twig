@@ -11,7 +11,7 @@
     <div class="example-wrapper">
         {% if tournaments %}
         {% for tournament in tournaments %}
-            <a href="{{ path('app_new_tournament', {id: tournament.id}) }}">{{ tournament.name }}</a>
+            <p><a href="{{ path('app_new_tournament', {id: tournament.id}) }}">{{ tournament.name }}</a> <a href="{{ path('setting_tournament', {id: tournament.id}) }}">настроить</a></p>
         {% endfor %}
         {% else %}
         <p>Активных турниров нет</p>
