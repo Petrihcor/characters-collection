@@ -7,11 +7,13 @@ use App\Entity\Character;
 use App\Entity\League;
 use App\Entity\Tournament;
 use App\Entity\TournamentCharacter;
+use App\Entity\Universe;
 use App\Form\CharacterType;
 
 use App\Form\LeagueType;
 use App\Form\TournamentCharactersType;
 use App\Form\TournamentType;
+use App\Form\UniverseType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -24,7 +26,7 @@ final class EditorController extends AbstractController
     #[Route('/editor', name: 'app_editor')]
     public function index(): Response
     {
-        return $this->render('editor/index.html.twig', [
+        return $this->render('editor/begin.html.twig', [
             'controller_name' => 'EditorController',
         ]);
     }
@@ -39,11 +41,29 @@ final class EditorController extends AbstractController
             $em->flush();
             return $this->redirectToRoute('choose_tournament');
         }
-        return $this->render('editor/newLeague.html.twig', [
+        return $this->render('league/newLeague.html.twig', [
             'form' => $form,
         ]);
 
     }
+
+    #[Route('/create/universe', name: 'create_universe', methods: ['GET', 'POST'])]
+    public function createUniverse(Request $request, EntityManagerInterface $em, ParameterBagInterface $params)
+    {
+        $universe = new Universe();
+        $form = $this->createForm(UniverseType::class, $universe);
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->persist($universe);
+            $em->flush();
+            return $this->redirectToRoute('app_home');
+        }
+        return $this->render('league/newUniverse.html.twig', [
+            'form' => $form,
+        ]);
+
+    }
+
     #[Route('/create/character', name: 'create_character', methods: ['GET', 'POST'])]
     public function createCharacter(Request $request, EntityManagerInterface $em, ParameterBagInterface $params)
     {
@@ -67,7 +87,7 @@ final class EditorController extends AbstractController
             return $this->redirectToRoute('app_characters');
         }
 
-        return $this->render('editor/newCharacter.html.twig', [
+        return $this->render('character/newCharacter.html.twig', [
             'form' => $form,
         ]);
     }
@@ -95,7 +115,7 @@ final class EditorController extends AbstractController
             return $this->redirectToRoute('app_characters');
         }
 
-        return $this->render('editor/editCharacter.html.twig', [
+        return $this->render('character/editCharacter.html.twig', [
             'form' => $form,
             'character' => $character,
         ]);
@@ -114,7 +134,7 @@ final class EditorController extends AbstractController
             $em->flush();
             return $this->redirectToRoute('setting_tournament', [ 'id' => $tournament->getId()]);
         }
-        return $this->render('editor/newCustomTournament.html.twig', [
+        return $this->render('customTournament/newCustomTournament.html.twig', [
             'form' => $form,
         ]);
     }
@@ -131,8 +151,10 @@ final class EditorController extends AbstractController
             $em->flush();
             return $this->redirectToRoute('setting_tournament', [ 'id' => $tournament->getId()]);
         }
-        return $this->render('editor/addParticipant.html.twig', [
+        return $this->render('customTournament/addParticipant.html.twig', [
             'form' => $form,
         ]);
     }
+
+
 }

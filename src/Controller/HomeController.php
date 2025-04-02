@@ -26,7 +26,7 @@ final class HomeController extends AbstractController
     public function chooseTournament(EntityManagerInterface $em): Response
     {
         $leagues = $em->getRepository(League::class)->findAll();
-        return $this->render('home/beginTournament.html.twig', [
+        return $this->render('tournament/chooseTournament.html.twig', [
             'controller_name' => 'HomeController',
             'leagues' => $leagues
         ]);
@@ -57,4 +57,6 @@ final class HomeController extends AbstractController
             'tournaments' => $tournaments
         ]);
     }
+
+
 }

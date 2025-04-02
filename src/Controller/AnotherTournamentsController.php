@@ -27,7 +27,7 @@ final class AnotherTournamentsController extends AbstractController
     public function index(int $id, EntityManagerInterface $em): Response
     {
         $characters = $em->getRepository(Character::class)->findBy(['league' => $id]);;
-        return $this->render('tournament/index.html.twig', [
+        return $this->render('tournament/begin.html.twig', [
             'controller_name' => 'AnotherTournamentsController',
             'characters' => $characters,
             'id' => $id

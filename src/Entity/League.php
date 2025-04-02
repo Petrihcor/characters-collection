@@ -25,6 +25,12 @@ class League
     #[ORM\OneToMany(targetEntity: Character::class, mappedBy: 'league')]
     private Collection $characters;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $division = null;
+
+    #[ORM\ManyToOne]
+    private ?Universe $Universe = null;
+
 
 
     public function __construct()
@@ -79,5 +85,28 @@ class League
         return $this;
     }
 
+    public function getDivision(): ?int
+    {
+        return $this->division;
+    }
+
+    public function setDivision(?int $division): static
+    {
+        $this->division = $division;
+
+        return $this;
+    }
+
+    public function getUniverse(): ?Universe
+    {
+        return $this->Universe;
+    }
+
+    public function setUniverse(?Universe $Universe): static
+    {
+        $this->Universe = $Universe;
+
+        return $this;
+    }
 
 }

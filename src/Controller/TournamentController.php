@@ -39,7 +39,7 @@ final class TournamentController extends AbstractController
         $bracket = $this->tournamentService->deserializeLevels($tournament->getLevels(), $serializer);
         $places = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
 
-        return $this->render('new_tournament/index.html.twig', [
+        return $this->render('classic_tournament/index.html.twig', [
             'tournament' => $tournament,
             'bracket' => $bracket,
             'id' => $id,
@@ -268,7 +268,7 @@ final class TournamentController extends AbstractController
         foreach ($tournament->getTournamentCharacters() as $tournamentCharacter) {
             $characters[] = $tournamentCharacter->getCharacter();
         }
-        return $this->render('editor/settingCustomTournament.html.twig', [
+        return $this->render('customTournament/settingCustomTournament.html.twig', [
             'tournament' => $tournament,
             'characters' => $characters,
             'id' => $id
