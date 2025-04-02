@@ -1,0 +1,22 @@
+<header>
+    <nav>
+        <ul class="menu">
+            <li class="dropdown">
+                <a href="#">Добавить</a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ path('create_league') }}">Лигу</a></li>
+                    <li><a href="{{ path('create_universe') }}">Вселенную</a></li>
+                    <li><a href="{{ path('create_character') }}">Персонажа</a></li>
+                </ul>
+            </li>
+            <li class="dropdown">
+                <a href="#">Турниры</a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ path('choose_tournament') }}">Начать турнир</a></li>
+                    <li><a href="{{ path('app_tournaments') }}">Активные турниры</a></li>
+                </ul>
+            </li>
+            <li><a href="{{ path('app_characters') }}">Список персонажей</a></li>
+        </ul>
+    </nav>
+</header>

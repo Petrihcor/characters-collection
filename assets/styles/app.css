@@ -10,6 +10,58 @@ h1, h2, h3 {
     color: #333;
 }
 
+.menu {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    padding: 10px;
+    background-color: #333;
+    border-radius: 8px;
+}
+.menu li {
+    position: relative;
+}
+.menu a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+    display: block;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+.menu a:hover {
+    background: #555;
+}
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    list-style: none;
+    padding: 10px 0;
+    min-width: 150px;
+}
+.dropdown-menu li {
+    padding: 5px 20px;
+}
+.dropdown-menu li a {
+    color: black;
+    padding: 8px 12px;
+    display: block;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+.dropdown-menu li a:hover {
+    background: #eee;
+}
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+
 .logs {
     background: #fff;
     padding: 15px;
