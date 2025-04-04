@@ -4,6 +4,10 @@
 
 {% block body %}
     <div class="container">
+        {{ form_start(filterForm) }}
+            {{ form_row(filterForm.search) }}
+        <button type="submit">Найти</button>
+        {{ form_end(filterForm) }}
         <div class="character-grid">
             {% for character in characters %}
                 <div class="character-item">
@@ -21,6 +25,9 @@
                     <a href="{{ path('edit_character', { id: character.id }) }}" class="edit-button">Редактировать</a>
                 </div>
             {% endfor %}
+        </div>
+        <div class="navigation">
+            {{ knp_pagination_render(characters) }}
         </div>
     </div>
 {% endblock %}

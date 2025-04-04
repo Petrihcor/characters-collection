@@ -3,7 +3,10 @@
 namespace App\Repository;
 
 use App\Entity\Character;
+use App\Model\CharacterFilter;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+
+use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -40,4 +43,15 @@ class CharacterRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+    public function getFilteredQuery(CharacterFilter $filter): Query
+    {
+        $qb = $this->createQueryBuilder('c');
+
+        if ($filter->search) {
+            $qb->andWhere('c.name LIKE :search')
+                ->setParameter('search', '%' . $filter->search . '%');
+        }
+
+        return $qb->orderBy('c.name', 'ASC')->getQuery();
+    }
 }

@@ -3,18 +3,22 @@
 {% block title %}Hello HomeController!{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <style>
+        .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
+        .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
+    </style>
 
-<div class="example-wrapper">
-    <h1>Добро пожаловать!</h1>
-    <a href="{{ path('choose_tournament') }}">Начать турнир</a>
-    <a href="{{ path('create_league') }}">Добавить лигу</a>
-    <a href="{{ path('create_universe') }}">Добавить вселенную</a>
-    <a href="{{ path('create_character') }}">Добавить персонажа</a>
-    <a href="{{ path('app_characters') }}">Список персонажей</a>
-    <a href="{{ path('app_tournaments') }}">Активные турниры</a>
-</div>
+    <div class="example-wrapper">
+        <h1>Турниры</h1>
+        <h2>Выбери лигу</h2>
+        {% if leagues %}
+            {% for league in leagues %}
+                <a href="{{ path('app_tournament', {'id': league.id}) }}">{{ league.name }}</a>
+            {% endfor %}
+        {% else %}
+            <p>Пока что лиги отсутствуют</p>
+        {% endif %}
+        <h2>Или создай турнир</h2>
+        <a href="{{ path('create_custom_tournament') }}">Создать</a>
+    </div>
 {% endblock %}
