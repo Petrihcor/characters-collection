@@ -156,5 +156,76 @@ final class EditorController extends AbstractController
         ]);
     }
 
+    #[Route('/tournament/setting/{id}', name: 'setting_tournament', methods: ['GET', 'POST'])]
+    public function settingTournament(int $id, Request $request, EntityManagerInterface $em)
+    {
+        $tournament = $em->getRepository(Tournament::class)->findOneBy(['id' => $id]);
+        if($tournament->getLevels()) {
+            return $this->render('customTournament/error.html.twig');
+        } else {
+            $characters = [];
+            foreach ($tournament->getTournamentCharacters() as $tournamentCharacter) {
+                $characters[] = $tournamentCharacter->getCharacter();
+            }
 
+            //делаем форму для добавления участников
+            $participant = new TournamentCharacter();
+            $formParticipant = $this->createForm(TournamentCharactersType::class, $participant);
+            $formParticipant->handleRequest($request);
+
+
+            if ($formParticipant->isSubmitted() && $formParticipant->isValid()) {
+                $selectedCharacters = $formParticipant->get('character')->getData();
+
+                foreach ($selectedCharacters as $character) {
+                    $participant = new TournamentCharacter();
+                    $participant->setTournament($tournament);
+                    $participant->setCharacter($character);
+
+                    $em->persist($participant);
+                }
+                $em->flush();
+
+                return $this->render('customTournament/settingCustomTournament.html.twig', [
+                    'tournament' => $tournament,
+                    'characters' => $characters,
+                    'formParticipant' => $formParticipant,
+                    'id' => $id
+                ]);
+            }
+
+            return $this->render('customTournament/settingCustomTournament.html.twig', [
+                'tournament' => $tournament,
+                'characters' => $characters,
+                'formParticipant' => $formParticipant,
+                'id' => $id
+            ]);
+
+        }
+
+    }
+
+    #[Route('/tournament-character/delete', name: 'delete_participant', methods: ['POST'])]
+    public function deleteCharacter(EntityManagerInterface $em, Request $request)
+    {
+
+        $characterId = $request->request->get('characterId');
+        $tournamentId = $request->request->get('tournamentId');
+        $character = $em->getRepository(TournamentCharacter::class)->findOneBy([
+            'character' => $characterId,
+            'tournament' => $tournamentId
+        ]);
+
+        if (!$character) {
+            throw $this->createNotFoundException('Участник турнира не найден.');
+        }
+
+        $tournamentId = $character->getTournament()->getId(); // Чтобы потом вернуться обратно
+
+        $em->remove($character);
+        $em->flush();
+
+        return $this->redirectToRoute('setting_tournament', ['id' => $tournamentId]);
+
+    }
 }

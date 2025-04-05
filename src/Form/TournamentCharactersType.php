@@ -19,6 +19,8 @@ class TournamentCharactersType extends AbstractType
             ->add('character', EntityType::class, [
                 'class' => Character::class,
                 'choice_label' => 'name',
+                'multiple' => true,
+                'mapped' => false,
             ])
             ->add('submit', SubmitType::class, ['label' => 'Добавить'])
         ;

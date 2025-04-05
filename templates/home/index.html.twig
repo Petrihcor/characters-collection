@@ -13,7 +13,7 @@
         <h2>Выбери лигу</h2>
         {% if leagues %}
             {% for league in leagues %}
-                <a href="{{ path('app_tournament', {'id': league.id}) }}">{{ league.name }}</a>
+                <a href="{{ path('app_tournament', {'id': league.id}) }}"><p>{{ league.name }}</p></a>
             {% endfor %}
         {% else %}
             <p>Пока что лиги отсутствуют</p>

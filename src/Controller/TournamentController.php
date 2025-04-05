@@ -6,6 +6,7 @@ use App\Entity\Character;
 use App\Entity\League;
 use App\Entity\Tournament;
 use App\Entity\TournamentCharacter;
+use App\Form\TournamentCharactersType;
 use App\Service\TournamentService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -21,13 +22,12 @@ final class TournamentController extends AbstractController
 {
     private $tournamentService;
     private $entityManager;
-    private $logger;
 
-    public function __construct(TournamentService $tournamentService, EntityManagerInterface $entityManager, LoggerInterface $logger)
+
+    public function __construct(TournamentService $tournamentService, EntityManagerInterface $entityManager)
     {
         $this->tournamentService = $tournamentService;
         $this->entityManager = $entityManager;
-        $this->logger = $logger;
     }
 
     #[Route('/new/tournament/{id}', name: 'app_new_tournament')]
@@ -155,12 +155,10 @@ final class TournamentController extends AbstractController
     public function fight(int $id, Request $request, SerializerInterface $serializer) {
 
 
-
         $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
         $levels = $this->tournamentService->deserializeLevels($tournament->getLevels(), $serializer);
 
         $key = $request->request->get('level');
-        $this->logger->info('Key value:', ['key' => $key]);
         //TODO: небольшой костыль в виде проверки $key, может быть пофикшу
         if ($key == "null") {
             //TODO: вынести в сервис
@@ -260,26 +258,6 @@ final class TournamentController extends AbstractController
         return $this->redirectToRoute('finished_tournaments');
     }
 
-    #[Route('/tournament/setting/{id}', name: 'setting_tournament')]
-    public function settingTournament(int $id)
-    {
-        $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
-        if($tournament->getLevels()) {
-            return $this->render('customTournament/error.html.twig');
-        } else {
-            $characters = [];
-            foreach ($tournament->getTournamentCharacters() as $tournamentCharacter) {
-                $characters[] = $tournamentCharacter->getCharacter();
-            }
-            return $this->render('customTournament/settingCustomTournament.html.twig', [
-                'tournament' => $tournament,
-                'characters' => $characters,
-                'id' => $id
-            ]);
-
-        }
-
-    }
     #[Route('/start-custom-tournament/{id}', name: 'start_custom_tournament')]
     public function startCustomTournament(int $id, SerializerInterface $serializer)
     {
@@ -301,6 +279,7 @@ final class TournamentController extends AbstractController
         $tournament->setLevels($levels);
         $this->entityManager->persist($tournament);
         $this->entityManager->flush();
+
         return $this->redirectToRoute('app_new_tournament', [ 'id' => $tournament->getId()]);
     }
 }

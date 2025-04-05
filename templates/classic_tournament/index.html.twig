@@ -1,13 +1,19 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Tournament Bracket{% endblock %}
+{% block title %}{{ tournament.name }}{% endblock %}
 
 {% block body %}
-    <h1>Tournament Bracket</h1>
-
+    <h1>{{ tournament.name }}</h1>
+    <div class="container">
+        <p>Статы</p>
+        <ul>
+            {% for stat in tournament.stats %}
+            <li>{{ stat }}</li>
+            {% endfor %}
+        </ul>
 
     <!-- Текущий уровень турнира -->
-    <div class="container">
+
         <h2>Current Bracket</h2>
         {% set sorted_bracket = bracket|keys|sort|reverse %} {# Получаем отсортированные ключи #}
 
@@ -20,11 +26,11 @@
                             <div class="character-card" data-id="{{ player.getid()  }}" style="background-image: url('{{ asset('images/' ~ player.image) }}');">
                                 <div class="character-info">
                                     <h3 class="character-name">{{ player.name }}</h3>
-                                    <p class="character-stat">Интеллект: {{ player.intelligence }}</p>
-                                    <p class="character-stat">Сила: {{ player.strength }}</p>
-                                    <p class="character-stat">Ловкость: {{ player.agility }}</p>
-                                    <p class="character-stat">Особые умения: {{ player.specialPowers }}</p>
-                                    <p class="character-stat">Бойцовские навыки: {{ player.fightingSkills }}</p>
+{#                                    <p class="character-stat">Интеллект: {{ player.intelligence }}</p>#}
+{#                                    <p class="character-stat">Сила: {{ player.strength }}</p>#}
+{#                                    <p class="character-stat">Ловкость: {{ player.agility }}</p>#}
+{#                                    <p class="character-stat">Особые умения: {{ player.specialPowers }}</p>#}
+{#                                    <p class="character-stat">Бойцовские навыки: {{ player.fightingSkills }}</p>#}
                                 </div>
                             </div>
                 </div>
@@ -52,6 +58,9 @@
             <span class="close">&times;</span>
 
             <p id="levelDisplay">Уровень: </p>
+            {% for stat in tournament.stats %}
+                <li>{{ stat }}</li>
+            {% endfor %}
             <div id="fightersContainer">
 
                 <p>Загрузка соперников...</p>
@@ -85,6 +94,7 @@
         </table>
     </div>
     <script>
+        //перенести в app.js
         document.addEventListener("DOMContentLoaded", function () {
             const modal = document.getElementById("fightModal");
             const openModalBtn = document.getElementById("openFightModal");
@@ -115,10 +125,12 @@
                         <div class="character-card" style="background-image: url('/images/${fighter.image}');">
                             <div class="character-info">
                                 <h3 class="character-name">${fighter.name}</h3>
-                                ${Object.entries(fighter)
-                                .filter(([key]) => key !== "id" && key !== "name" && key !== "image")
-                                .map(([key, value]) => `<p class="character-stat">${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`)
-                                .join("")}
+                                ${/*
+            Object.entries(fighter)
+            .filter(([key]) => key !== "id" && key !== "name" && key !== "image")
+            .map(([key, value]) => `<p class="character-stat">${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`)
+            .join("")
+        */""}
                             </div>
                             <input type="hidden" name="fighters[]" value="${fighter.id}">
                         </div>

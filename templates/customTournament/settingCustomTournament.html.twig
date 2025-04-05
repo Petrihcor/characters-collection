@@ -25,14 +25,33 @@
                     <p class="character-stat">Бойцовские навыки: {{ character.fightingSkills }}</p>
                 </div>
             </div>
-            <a href="{{ path('edit_character', { id: character.id }) }}" class="edit-button">Редактировать</a>
+            <form action="{{ path('delete_participant') }}" method="post">
+                <input type="hidden" name="characterId" value="{{ character.id }}">
+                <input type="hidden" name="tournamentId" value="{{ tournament.id }}">
+                <button class="danger-button">Удалить</button>
+            </form>
         </div>
     {% endfor %}
     </div>
     {% else %}
         <p>Турнир пока пустой, добавь участников</p>
     {% endif %}
-    <a href="{{ path('create_character_tournament', {id: id}) }}">Добавить участников</a>
+    <h3>Добавить учатника</h3>
+    {{ form_start(formParticipant) }}
+        {{ form_row(formParticipant.character, {'attr': {'class': 'select2'}}) }}
+        {{ form_row(formParticipant.submit) }}
+    {{ form_end(formParticipant) }}
     <a href="{{path('start_custom_tournament', {id: id}) }}">Запустить турнир</a>
 </div>
+
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%',
+                placeholder: "Выберите персонажа",
+                allowClear: true
+            });
+        });
+    </script>
+
 {% endblock %}
