@@ -21,6 +21,7 @@ class TournamentType extends AbstractType
             ->add('type', ChoiceType::class, [
                 'choices' => [
                     'Простое сравнивание' => 'classic',
+                    'Сравнивание с вероятностью' => 'logistic'
                 ],
                 'placeholder' => 'Выберите тип турнира',
             ])

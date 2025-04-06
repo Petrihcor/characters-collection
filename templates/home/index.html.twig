@@ -13,7 +13,17 @@
         <h2>Выбери лигу</h2>
         {% if leagues %}
             {% for league in leagues %}
-                <a href="{{ path('app_tournament', {'id': league.id}) }}"><p>{{ league.name }}</p></a>
+                <div class="league-item">
+                    <p>
+                        <a href="{{ path('app_league', {'id': league.id}) }}">{{ league.name }}</a>
+                        <a href="#" class="edit-toggle" data-target="form-{{ league.id }}">(ред.)</a>
+                    </p>
+
+                    <form id="form-{{ league.id }}" class="rename-form" action="{{ path('edit_league', {id: league.id}) }}" method="post">
+                        <input type="text" name="name">
+                        <button type="submit">Переименовать</button>
+                    </form>
+                </div>
             {% endfor %}
         {% else %}
             <p>Пока что лиги отсутствуют</p>

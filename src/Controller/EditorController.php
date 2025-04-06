@@ -84,7 +84,7 @@ final class EditorController extends AbstractController
             $em->persist($character);
             $em->flush();
 
-            return $this->redirectToRoute('app_characters');
+            return $this->redirectToRoute('app_league', ['id' => $character->getLeague()->getId()]);
         }
 
         return $this->render('character/newCharacter.html.twig', [
@@ -112,7 +112,7 @@ final class EditorController extends AbstractController
             }
 
             $em->flush();
-            return $this->redirectToRoute('app_characters');
+            return $this->redirectToRoute('app_league', ['id' => $character->getLeague()->getId()]);
         }
 
         return $this->render('character/editCharacter.html.twig', [
@@ -227,5 +227,16 @@ final class EditorController extends AbstractController
 
         return $this->redirectToRoute('setting_tournament', ['id' => $tournamentId]);
 
+    }
+
+    #[Route('/league/edit/{id}', name: 'edit_league', methods: ['POST'])]
+    public function editLeague(int $id, Request $request, EntityManagerInterface $em)
+    {
+        $name = $request->request->get('name');
+        $league = $em->getRepository(League::class)->findOneBy(['id' => $id]);
+        $league->setName($name);
+        $em->persist($league);
+        $em->flush();
+        return $this->redirectToRoute('app_home');
     }
 }

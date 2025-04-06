@@ -26,11 +26,11 @@
                             <div class="character-card" data-id="{{ player.getid()  }}" style="background-image: url('{{ asset('images/' ~ player.image) }}');">
                                 <div class="character-info">
                                     <h3 class="character-name">{{ player.name }}</h3>
-{#                                    <p class="character-stat">Интеллект: {{ player.intelligence }}</p>#}
-{#                                    <p class="character-stat">Сила: {{ player.strength }}</p>#}
-{#                                    <p class="character-stat">Ловкость: {{ player.agility }}</p>#}
-{#                                    <p class="character-stat">Особые умения: {{ player.specialPowers }}</p>#}
-{#                                    <p class="character-stat">Бойцовские навыки: {{ player.fightingSkills }}</p>#}
+                                    <p class="character-stat">Интеллект: {{ player.intelligence }}</p>
+                                    <p class="character-stat">Сила: {{ player.strength }}</p>
+                                    <p class="character-stat">Ловкость: {{ player.agility }}</p>
+                                    <p class="character-stat">Особые умения: {{ player.specialPowers }}</p>
+                                    <p class="character-stat">Бойцовские навыки: {{ player.fightingSkills }}</p>
                                 </div>
                             </div>
                 </div>
@@ -125,12 +125,10 @@
                         <div class="character-card" style="background-image: url('/images/${fighter.image}');">
                             <div class="character-info">
                                 <h3 class="character-name">${fighter.name}</h3>
-                                ${/*
-            Object.entries(fighter)
-            .filter(([key]) => key !== "id" && key !== "name" && key !== "image")
-            .map(([key, value]) => `<p class="character-stat">${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`)
-            .join("")
-        */""}
+                                ${Object.entries(fighter)
+                                .filter(([key]) => key !== "id" && key !== "name" && key !== "image")
+                                .map(([key, value]) => `<p class="character-stat">${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</p>`)
+                                .join("")}
                             </div>
                             <input type="hidden" name="fighters[]" value="${fighter.id}">
                         </div>
@@ -172,6 +170,7 @@
                             fightersContainer.innerHTML = `
                         <h3>🏆 Победитель: ${data.winner.name} 🏆</h3>
                         <img src="/images/${data.winner.image}" alt="${data.winner.name}" style="width:150px; height:150px; border-radius:50%;">
+                        <p>🔢 Вероятность победы: ${(data.probability * 100).toFixed(1)}%</p>
                     `;
                         }
 

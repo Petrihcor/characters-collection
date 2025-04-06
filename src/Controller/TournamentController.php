@@ -152,7 +152,7 @@ final class TournamentController extends AbstractController
     }
 
     #[Route('/new/tournament/{id}/result', name: 'fight')]
-    public function fight(int $id, Request $request, SerializerInterface $serializer) {
+    public function fight(int $id, Request $request, SerializerInterface $serializer, LoggerInterface $logger) {
 
 
         $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
@@ -204,11 +204,11 @@ final class TournamentController extends AbstractController
             error_log($response->getContent());
             return $response;
         } else {
+
             $fighterIds = $request->request->all('fighters');
             $fighters = $this->entityManager->getRepository(Character::class)->findBy(['id' => $fighterIds]);
 
-
-            $result = $this->tournamentService->runClassicTournament($fighters, $tournament, $levels, $key);
+            $result = $this->tournamentService->runClassicTournament($fighters, $tournament, $levels, $key, $logger);
             $newLevels = $this->tournamentService->changeBracket($result['winners'], $result['losers'], $levels, $this->entityManager, $id);
 
             foreach ($newLevels as &$level) {
@@ -232,6 +232,7 @@ final class TournamentController extends AbstractController
             return $this->json([
                 'status' => 'success',
                 'message' => 'Бой проведен!',
+                'probability' => $result['probability'],
                 'winner' => [
                     'id' => $result['winners'][0]->getId(),
                     'name' => $result['winners'][0]->getName(),
