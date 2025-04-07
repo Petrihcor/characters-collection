@@ -39,7 +39,7 @@ final class EditorController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($league);
             $em->flush();
-            return $this->redirectToRoute('choose_tournament');
+            return $this->redirectToRoute('app_home');
         }
         return $this->render('league/newLeague.html.twig', [
             'form' => $form,
