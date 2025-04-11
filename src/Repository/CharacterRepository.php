@@ -45,11 +45,23 @@ class CharacterRepository extends ServiceEntityRepository
     //    }
     public function getFilteredQuery(CharacterFilter $filter): Query
     {
-        $qb = $this->createQueryBuilder('c');
+        $qb = $this->createQueryBuilder('c')
+            ->leftJoin('c.league', 'l')
+            ->leftJoin('l.universe', 'u');
 
         if ($filter->search) {
             $qb->andWhere('c.name LIKE :search')
                 ->setParameter('search', '%' . $filter->search . '%');
+        }
+
+        if (!empty($filter->leagues)) {
+            $qb->andWhere('c.league IN (:leagues)')
+                ->setParameter('leagues', $filter->leagues);
+        }
+
+        if (!empty($filter->universes)) {
+            $qb->andWhere('u IN (:universes)')
+                ->setParameter('universes', $filter->universes);
         }
 
         return $qb->orderBy('c.name', 'ASC')->getQuery();

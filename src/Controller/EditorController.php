@@ -15,8 +15,11 @@ use App\Form\TournamentCharactersType;
 use App\Form\TournamentType;
 use App\Form\UniverseType;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -172,7 +175,26 @@ final class EditorController extends AbstractController
             $participant = new TournamentCharacter();
             $formParticipant = $this->createForm(TournamentCharactersType::class, $participant);
             $formParticipant->handleRequest($request);
-
+            $fastForm = $this->createFormBuilder()
+                ->setAction($this->generateUrl('fast_add_participant', [
+                    'id' => $id
+                ]))
+                ->add('tournament', EntityType::class, [
+                    'class' => Tournament::class,
+                    'choice_label' => 'name',
+                    'placeholder' => 'Выберите турнир',
+                    'label' => 'Турнир',
+                    'required' => true,
+                    'mapped' => false,
+                    'query_builder' => function (EntityRepository $er) {
+                        return $er->createQueryBuilder('t')
+                            ->where('t.isActive = :active')
+                            ->setParameter('active', false);
+                    }
+                ])
+                ->add('submit', SubmitType::class)
+            ->getForm();
+            $fastForm->handleRequest($request);
 
             if ($formParticipant->isSubmitted() && $formParticipant->isValid()) {
                 $selectedCharacters = $formParticipant->get('character')->getData();
@@ -185,24 +207,66 @@ final class EditorController extends AbstractController
                     $em->persist($participant);
                 }
                 $em->flush();
-
-                return $this->render('customTournament/settingCustomTournament.html.twig', [
-                    'tournament' => $tournament,
-                    'characters' => $characters,
-                    'formParticipant' => $formParticipant,
-                    'id' => $id
-                ]);
+                $this->addFlash('success', 'Участники успешно добавлены!');
+                return $this->redirectToRoute('setting_tournament', ['id' => $id]);
             }
 
             return $this->render('customTournament/settingCustomTournament.html.twig', [
                 'tournament' => $tournament,
                 'characters' => $characters,
                 'formParticipant' => $formParticipant,
-                'id' => $id
+                'id' => $id,
+                'fastForm' => $fastForm
             ]);
 
         }
 
+    }
+
+    #[Route('/tournament/setting/{id}/fast-add', name: 'fast_add_participant', methods: ['POST'])]
+    public function addFromAnotherTournament(int $id, EntityManagerInterface $em, Request $request)
+    {
+        $currentTournament = $em->getRepository(Tournament::class)->find($id);
+
+        $form = $this->createFormBuilder()
+            ->add('tournament', EntityType::class, [
+                'class' => Tournament::class,
+                'choice_label' => 'name',
+                'required' => true,
+            ])
+            ->add('submit', SubmitType::class)
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var Tournament $anotherTournament */
+            $anotherTournament = $form->get('tournament')->getData();
+
+            $characters = $em->getRepository(TournamentCharacter::class)->findBy(
+                ['tournament' => $anotherTournament->getId()],
+                ['place' => 'ASC'] // сортировка по возрастанию
+            );
+             // теперь должен быть объект турнира
+            $total = count($characters);
+            $half = (int) ceil($total / 2); // первая половина (если нечётное — округляем вверх)
+
+            $firstHalf = array_slice($characters, 0, $half);
+            // Создаём новые записи
+            foreach ($firstHalf as $tournamentCharacter) {
+                $newParticipant = new TournamentCharacter();
+                $newParticipant->setTournament($currentTournament);
+                $newParticipant->setCharacter($tournamentCharacter->getCharacter());
+                $em->persist($newParticipant);
+            }
+
+            $em->flush();
+
+            // Редиректим обратно на страницу настроек
+            return $this->redirectToRoute('setting_tournament', ['id' => $id]);
+        }
+
+        dd('Форма не прошла валидацию');
     }
 
     #[Route('/tournament-character/delete', name: 'delete_participant', methods: ['POST'])]

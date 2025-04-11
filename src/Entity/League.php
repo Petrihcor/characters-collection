@@ -29,7 +29,7 @@ class League
     private ?int $division = null;
 
     #[ORM\ManyToOne]
-    private ?Universe $Universe = null;
+    private ?Universe $universe = null;
 
 
 
@@ -99,12 +99,12 @@ class League
 
     public function getUniverse(): ?Universe
     {
-        return $this->Universe;
+        return $this->universe;
     }
 
     public function setUniverse(?Universe $Universe): static
     {
-        $this->Universe = $Universe;
+        $this->universe = $Universe;
 
         return $this;
     }

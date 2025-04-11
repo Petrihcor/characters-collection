@@ -15,10 +15,12 @@ use Symfony\Component\Serializer\SerializerInterface;
 class TournamentService
 {
     private FightService $fightService;
+    private LoggerInterface $logger;
 
-    public function __construct(FightService $fightService)
+    public function __construct(FightService $fightService, LoggerInterface $logger)
     {
         $this->fightService = $fightService;
+        $this->logger = $logger;
     }
 
 
@@ -60,6 +62,7 @@ class TournamentService
             $losers[] = $result['loser'];
 
         } else {
+
             if ($tournament->getType() == "classic") {
                 $result = $this->fightService->multipleOddCompare($tournament->getStats(), $key, $fighters);
             } elseif ($tournament->getType() == "logistic") {
@@ -101,43 +104,30 @@ class TournamentService
     public function chooseOpponents(array &$levels): array
     {
         $fighters = [];
-        $levelKey = null;
+
+
         //FIXME: найти способ избавиться от foreach и указывать в какой именно ключ надо зайти
         foreach ($levels as $key => &$level) {
+            $levelKey = $key;
 
+            shuffle($level);
             if (count($level) < 2) {
                 continue;
-            }
-            if (count($level) % 2 == 0) {
-                $levelKey = $key;
-                for ($i = 0; $i < count($level); $i += 2 ) {
-                    $randomKeys = array_rand($level, 2);
-
-                    // Забираем элементы по этим случайным ключам
-                    $fighters[] = $level[$randomKeys[0]];  // Первый случайный элемент
-                    $fighters[] = $level[$randomKeys[1]];  // Второй случайный элемент
-
-                    // Убираем выбранные элементы из массива $level
-                    unset($level[$randomKeys[0]]);
-                    unset($level[$randomKeys[1]]);
-
-                    // Индексирование массива после удаления элементов
-                    $level = array_values($level);
-
-                    break;
-                }
+            } elseif (count($level) % 2 == 0) {
+                $fighters[] = array_shift($level);
+                $fighters[] = array_shift($level);
                 break;
             } else {
-                $levelKey = $key;
                 $fighters = array_splice($level, 0, 3);
                 break;
             }
 
         }
+
+
         return [
             'fighters' => $fighters,
             'key' => $levelKey
-
         ];
     }
     public function changeBracket(array $winners, array $losers, array $bracket, EntityManagerInterface $em, int $tournamentId)

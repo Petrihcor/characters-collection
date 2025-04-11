@@ -10,8 +10,15 @@
 
 <div class="container">
     <h1>Настройка турнира</h1>
-    <div class="character-grid">
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
     {% if characters %}
+        <div class="character-grid">
     {% for character in characters %}
         <div class="character-item">
 
@@ -32,15 +39,22 @@
             </form>
         </div>
     {% endfor %}
-    </div>
+
     {% else %}
         <p>Турнир пока пустой, добавь участников</p>
+        </div>
     {% endif %}
-    <h3>Добавить учатника</h3>
+
+    <h3>Добавить участника</h3>
     {{ form_start(formParticipant) }}
         {{ form_row(formParticipant.character, {'attr': {'class': 'select2'}}) }}
         {{ form_row(formParticipant.submit) }}
     {{ form_end(formParticipant) }}
+    <h3>Выбрать из другого турнира</h3>
+    {{ form_start(fastForm) }}
+        {{ form_row(fastForm.tournament, {'attr': {'class': 'select-tournament'}}) }}
+        {{ form_row(fastForm.submit) }}
+    {{ form_end(fastForm) }}
     <a href="{{path('start_custom_tournament', {id: id}) }}">Запустить турнир</a>
 </div>
 
@@ -49,6 +63,11 @@
             $('.select2').select2({
                 width: '100%',
                 placeholder: "Выберите персонажа",
+                allowClear: true
+            });
+            $('.select-tournament').select2({
+                width: '100%',
+                placeholder: "Выберите турнир",
                 allowClear: true
             });
         });

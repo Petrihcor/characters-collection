@@ -157,10 +157,10 @@ final class TournamentController extends AbstractController
 
         $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['id' => $id]);
         $levels = $this->tournamentService->deserializeLevels($tournament->getLevels(), $serializer);
-
+        $fighterIds = $request->request->all('fighters');
         $key = $request->request->get('level');
         //TODO: небольшой костыль в виде проверки $key, может быть пофикшу
-        if ($key == "null") {
+        if ($fighterIds == null) {
             //TODO: вынести в сервис
             foreach ($levels as $key => &$level) {
                 $placesData = $this->entityManager->getRepository(TournamentCharacter::class)->findBy(["tournament" => $id]);
@@ -205,7 +205,6 @@ final class TournamentController extends AbstractController
             return $response;
         } else {
 
-            $fighterIds = $request->request->all('fighters');
             $fighters = $this->entityManager->getRepository(Character::class)->findBy(['id' => $fighterIds]);
 
             $result = $this->tournamentService->runClassicTournament($fighters, $tournament, $levels, $key, $logger);

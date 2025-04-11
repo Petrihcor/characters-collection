@@ -7,10 +7,13 @@ use Psr\Log\LoggerInterface;
 
 class FightService
 {
-
+    private LoggerInterface $logger;
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
     public function multipleCompare(Character $hero1, Character $hero2, array $stats)
     {
-        $data = [];
         $hero1wins = 0;
         $hero2wins = 0;
         $hero1Total = 0;
@@ -24,204 +27,118 @@ class FightService
             $hero1Total += $stat1;
             $hero2Total += $stat2;
 
-            if ($stat1 > $stat2) {
-                $hero1wins++;
-            } elseif ($stat1 < $stat2) {
-                $hero2wins++;
-            }
+            $hero1wins += $stat1 > $stat2 ? 1 : 0;
+            $hero2wins += $stat1 < $stat2 ? 1 : 0;
         }
 
-        if ($hero1wins > $hero2wins) {
-            $data['winner'] = $hero1;
-            $data['loser'] = $hero2;
-        } elseif ($hero1wins < $hero2wins) {
-            $data['winner'] = $hero2;
-            $data['loser'] = $hero1;
+        if ($hero1wins !== $hero2wins) {
+            [$winner, $loser] = $hero1wins > $hero2wins ? [$hero1, $hero2] : [$hero2, $hero1];
+        } elseif ($hero1Total !== $hero2Total) {
+            [$winner, $loser] = $hero1Total > $hero2Total ? [$hero1, $hero2] : [$hero2, $hero1];
         } else {
-            if ($hero1Total > $hero2Total) {
-                $data['winner'] = $hero1;
-                $data['loser'] = $hero2;
-            } elseif ($hero1Total < $hero2Total) {
-                $data['winner'] = $hero2;
-                $data['loser'] = $hero1;
-            } else {
-                // Полная ничья — выбираем случайного победителя
-                if (rand(0, 1) === 0) {
-                    $data['winner'] = $hero1;
-                    $data['loser'] = $hero2;
-                } else {
-                    $data['winner'] = $hero2;
-                    $data['loser'] = $hero1;
-                }
-            }
+            [$winner, $loser] = rand(0, 1) === 0 ? [$hero1, $hero2] : [$hero2, $hero1];
         }
-        $data['probability'] = null;
-        return $data;
+
+        return [
+            'winner' => $winner,
+            'loser' => $loser,
+            'probability' => null,
+        ];
     }
 
     public function logisticCompare(Character $hero1, Character $hero2, array $stats, $d)
     {
-        $data = [];
         $hero1wins = 0;
         $hero2wins = 0;
         $hero1Total = 0;
         $hero2Total = 0;
-        $hero1TotalWinsProbability = 0;
-        $hero2TotalWinsProbability = 0;
+        $hero1TotalProb = 0;
+        $hero2TotalProb = 0;
 
-        // Проходим по всем статистикам и вычисляем победы по каждому стату
         foreach ($stats as $stat) {
-            $stat1 = $hero1->{"get" . ucfirst($stat)}();
-            $stat2 = $hero2->{"get" . ucfirst($stat)}();
+            $getter = 'get' . ucfirst($stat);
+            $stat1 = $hero1->$getter();
+            $stat2 = $hero2->$getter();
 
             $hero1Total += $stat1;
             $hero2Total += $stat2;
 
-            // Вычисляем шансы победы через логистическую функцию для каждого стата
-            $probability1 = 1 / (1 + exp(-($stat1 - $stat2) / $d));// вероятность победы hero1
-            $probability2 = 1 - $probability1;  // вероятность победы hero2
+            $prob1 = 1 / (1 + exp(-($stat1 - $stat2) / $d));
+            $prob2 = 1 - $prob1;
 
-            // Суммируем вероятности для каждого героя
-            $hero1TotalWinsProbability += $probability1;
-            $hero2TotalWinsProbability += $probability2;
+            $hero1TotalProb += $prob1;
+            $hero2TotalProb += $prob2;
 
-            // Генерация случайного числа для определения победителя по данному стату
-            $roll = mt_rand() / mt_getrandmax();  // Генерация случайного числа от 0 до 1
-
-            if ($roll < $probability1) {
-                $hero1wins++;
-            } else {
-                $hero2wins++;
-            }
-
+            $roll = mt_rand() / mt_getrandmax();
+            $hero1wins += ($roll < $prob1) ? 1 : 0;
+            $hero2wins += ($roll >= $prob1) ? 1 : 0;
         }
 
-        // Сравниваем победы по статам
-        if ($hero1wins > $hero2wins) {
-            $data['winner'] = $hero1;
-            $data['loser'] = $hero2;
-        } elseif ($hero1wins < $hero2wins) {
-            $data['winner'] = $hero2;
-            $data['loser'] = $hero1;
+        if ($hero1wins !== $hero2wins) {
+            [$winner, $loser] = $hero1wins > $hero2wins ? [$hero1, $hero2] : [$hero2, $hero1];
         } else {
-            // Если победы по статам равны, то сравниваем их суммарные значения с помощью логистической функции
-            $totalDifference = $hero1Total - $hero2Total; // Разница между суммарными статами
-            $probability1 = 1 / (1 + exp(-$totalDifference / $d));  // Общая вероятность победы hero1
-            // Применяем случайный выбор на основе вычисленных вероятностей
-            $roll = mt_rand() / mt_getrandmax();  // Генерация случайного числа от 0 до 1
-            if ($roll < $probability1) {
-                $data['winner'] = $hero1;
-                $data['loser'] = $hero2;
-
-            } else {
-                $data['winner'] = $hero2;
-                $data['loser'] = $hero1;
-
-            }
+            $prob1 = 1 / (1 + exp(-($hero1Total - $hero2Total) / $d));
+            $roll = mt_rand() / mt_getrandmax();
+            [$winner, $loser] = ($roll < $prob1) ? [$hero1, $hero2] : [$hero2, $hero1];
         }
 
-        // Вычисление итоговой вероятности победы для победителя
-        $totalProbability = $hero1TotalWinsProbability + $hero2TotalWinsProbability;
-        if ($data['winner'] === $hero1) {
-            $data['probability'] = $hero1TotalWinsProbability / $totalProbability;
-        } else {
-            $data['probability'] = $hero2TotalWinsProbability / $totalProbability;
-        }
-        return $data;
+        $totalProb = $hero1TotalProb + $hero2TotalProb;
+        $probability = ($winner === $hero1)
+            ? $hero1TotalProb / $totalProb
+            : $hero2TotalProb / $totalProb;
+
+        return [
+            'winner' => $winner,
+            'loser' => $loser,
+            'probability' => $probability,
+        ];
     }
 
-
-    public function multipleOddCompare(array $stats, int $key, array $level)
+    public function multipleOddCompare(array $stats, int $key, array $fighters)
     {
         $data = [];
 
+        usort($fighters, function ($a, $b) use ($stats) {
+            $aWins = 0;
+            $bWins = 0;
+            $aTotal = 0;
+            $bTotal = 0;
+
+            foreach ($stats as $stat) {
+                $aValue = $a->{"get" . ucfirst($stat)}();
+                $bValue = $b->{"get" . ucfirst($stat)}();
+
+                $aTotal += $aValue;
+                $bTotal += $bValue;
+
+                $aWins += $aValue > $bValue ? 1 : 0;
+                $bWins += $aValue < $bValue ? 1 : 0;
+            }
+
+            // Определяем победителя по количеству выигранных статов
+            if ($aWins !== $bWins) {
+                return $bWins <=> $aWins;
+            }
+
+            // Если ничья - сравниваем сумму статов
+            if ($aTotal !== $bTotal) {
+                return $bTotal <=> $aTotal;
+            }
+
+            // Если опять ничья - выбираем случайно
+            return random_int(0, 1) * 2 - 1;
+        });
+
         if ($key < 0) {
             // Отрицательный уровень: 3 человека → 2 победителя, 1 проигравший
-            while (count($level) >= 3) {
-                $heroes = array_splice($level, 0, 3);
-
-                usort($heroes, function ($a, $b) use ($stats) {
-                    $aWins = 0;
-                    $bWins = 0;
-                    $aTotal = 0;
-                    $bTotal = 0;
-
-                    foreach ($stats as $stat) {
-                        $aValue = $a->{"get" . ucfirst($stat)}();
-                        $bValue = $b->{"get" . ucfirst($stat)}();
-
-                        $aTotal += $aValue;
-                        $bTotal += $bValue;
-
-                        if ($aValue > $bValue) {
-                            $aWins++;
-                        } elseif ($bValue > $aValue) {
-                            $bWins++;
-                        }
-                    }
-
-                    // Определяем победителя по количеству выигранных статов
-                    if ($aWins !== $bWins) {
-                        return $bWins <=> $aWins;
-                    }
-
-                    // Если ничья - сравниваем сумму статов
-                    if ($aTotal !== $bTotal) {
-                        return $bTotal <=> $aTotal;
-                    }
-
-                    // Если опять ничья - выбираем случайно
-                    return random_int(0, 1) * 2 - 1;
-                });
-
-                $data['winners'][] = $heroes[0]; // Лучший
-                $data['winners'][] = $heroes[1]; // Второй
-                $data['losers'][] = $heroes[2];  // Худший
-
-
-            }
+            $data['winners'][] = $fighters[0]; // Лучший
+            $data['winners'][] = $fighters[1]; // Второй
+            $data['losers'][] = $fighters[2];  // Худший
         } else {
             // Положительный уровень: 3 человека → 1 победитель, 2 проигравших
-            while (count($level) >= 3) {
-                $heroes = array_splice($level, 0, 3);
-
-                usort($heroes, function ($a, $b) use ($stats) {
-                    $aWins = 0;
-                    $bWins = 0;
-                    $aTotal = 0;
-                    $bTotal = 0;
-
-                    foreach ($stats as $stat) {
-                        $aValue = $a->{"get" . ucfirst($stat)}();
-                        $bValue = $b->{"get" . ucfirst($stat)}();
-
-                        $aTotal += $aValue;
-                        $bTotal += $bValue;
-
-                        if ($aValue > $bValue) {
-                            $aWins++;
-                        } elseif ($bValue > $aValue) {
-                            $bWins++;
-                        }
-                    }
-
-                    if ($aWins !== $bWins) {
-                        return $bWins <=> $aWins;
-                    }
-
-                    if ($aTotal !== $bTotal) {
-                        return $bTotal <=> $aTotal;
-                    }
-
-                    return random_int(0, 1) * 2 - 1;
-                });
-
-                $data['winners'][] = $heroes[0]; // Лучший
-                $data['losers'][] = $heroes[1];  // Второй
-                $data['losers'][] = $heroes[2];  // Худший
-
-
-            }
+            $data['winners'][] = $fighters[0]; // Лучший
+            $data['losers'][] = $fighters[1];  // Второй
+            $data['losers'][] = $fighters[2];  // Худший
         }
         $data['probability'] = null;
         return $data;
@@ -236,7 +153,6 @@ class FightService
         $heroes = array_splice($level, 0, 3);
 
         $scores = [];
-        $probabilities = [];
 
         // Инициализируем счётчики
         foreach ($heroes as $hero) {
@@ -256,39 +172,39 @@ class FightService
                     $s2 = $hero2->{"get" . ucfirst($stat)}();
 
                     // Логируем информацию о сравнении стата
-                    $logger->info("Сравнение стата '$stat' для героев: " . spl_object_hash($hero1) . " и " . spl_object_hash($hero2));
-                    $logger->info("Значение статов: Hero1 = $s1, Hero2 = $s2");
+                    $logger->info("Сравнение стата '$stat' для героев: " . $hero1->getName() . " и " . $hero2->getName());
+                    $logger->info("Значение статов: {$hero1->getName()} = $s1, {$hero2->getName()} = $s2");
 
                     $prob1 = 1 / (1 + exp(-($s1 - $s2) / $d));
                     $roll = mt_rand() / mt_getrandmax();
 
                     // Логируем вероятность победы и случайный бросок
-                    $logger->info("Вероятность победы Hero1: $prob1, случайное число для Hero1: $roll");
+                    $logger->info("Вероятность победы {$hero1->getName()}: $prob1, случайное число для {$hero1->getName()}: $roll");
 
                     if ($roll < $prob1) {
                         $hero1StatWins++;
-                        $logger->info("Hero1 победил в страте '$stat'");
+                        $logger->info("{$hero1->getName()} победил в страте '$stat'");
                     } else {
                         $hero2StatWins++;
-                        $logger->info("Hero2 победил в страте '$stat'");
+                        $logger->info("{$hero1->getName()} победил в страте '$stat'");
                     }
                 }
 
                 // Победа в одной встрече — за большинство выигранных статов
                 if ($hero1StatWins > $hero2StatWins) {
                     $scores[spl_object_hash($hero1)]++;
-                    $logger->info("Hero1 победил в сравнении. Очки Hero1: " . $scores[spl_object_hash($hero1)]);
+                    $logger->info("{$hero1->getName()} победил в сравнении. Очки Hero1: " . $scores[spl_object_hash($hero1)]);
                 } elseif ($hero2StatWins > $hero1StatWins) {
                     $scores[spl_object_hash($hero2)]++;
-                    $logger->info("Hero2 победил в сравнении. Очки Hero2: " . $scores[spl_object_hash($hero2)]);
+                    $logger->info("{$hero2->getName()} победил в сравнении. Очки Hero2: " . $scores[spl_object_hash($hero2)]);
                 } else {
                     // Если ничья по статам — выбираем случайно
                     if (rand(0, 1) === 0) {
                         $scores[spl_object_hash($hero1)]++;
-                        $logger->info("Ничья, случайно победил Hero1. Очки Hero1: " . $scores[spl_object_hash($hero1)]);
+                        $logger->info("Ничья, случайно победил {$hero1->getName()}. Очки {$hero1->getName()}: " . $scores[spl_object_hash($hero1)]);
                     } else {
                         $scores[spl_object_hash($hero2)]++;
-                        $logger->info("Ничья, случайно победил Hero2. Очки Hero2: " . $scores[spl_object_hash($hero2)]);
+                        $logger->info("Ничья, случайно победил {$hero2->getName()}. Очки {$hero2->getName()}: " . $scores[spl_object_hash($hero2)]);
                     }
                 }
             }
@@ -492,7 +408,6 @@ class FightService
                 $logger->info("Hero " . $hash . " очки: $score");
             }
         }
-
 
         // Определяем порядок героев
         $orderedHeroes = [];
